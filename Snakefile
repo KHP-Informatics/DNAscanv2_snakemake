@@ -138,16 +138,34 @@ if rm_dup == "true":
 #sorting out the gene list to see if there are any unmatched genes in the reference and to make a custom bed out of that if no bed file is provided
 if BED or path_gene_list:
     if len(path_bed) == 0:
-        if len(path_gene_list) != 0: #need to change this
-            os.system("zgrep -iwf %s resources/%s_gene_names.txt.gz | awk '{print $2}' > %s/matched_genes.txt" % (path_gene_list, reference, results_dir))
-            os.system("zgrep -viwf %s/matched_genes.txt %s > %s/unmatched_genes.txt" % (results_dir, path_gene_list, results_dir))
-            os.system("zgrep -iwf %s resources/%s_gene_names.txt.gz | awk '{print $1}' > %s/matched_genes_codes.txt" % (path_gene_list, reference, results_dir))
-            os.system("zgrep -wf %s/matched_genes_codes.txt resources/%s_gene_db.txt | awk '{i=1; while (i<= int($8)) {n=split($9,a,/,/);n=split($10,b,/,/); print $2\"\t\"a[i]\"\t\"b[i]; i+=1}}' > %s/custom_tmp.bed" % (results_dir, reference, results_dir))
-            os.system("bedtools sort -i %s/custom_tmp.bed > %s/custom_sorted.bed" % (out, out))
-            os.system("bedtools merge -i %s/custom_sorted.bed > %s/custom.bed" % (out, out))
-            os.system("rm %s/custom_sorted.bed %s/custom_tmp.bed" % (out, out))
+        if len(path_gene_list) != 0: 
+            rule custombed:
+                input:
+                    path_gene_list
+                output:
+                    matched_genes = results_dir + "{sample}/matched_genes.txt",
+                    unmatched_genes = results_dir + "{sample}/unmatched_genes.txt",
+                    matched_genes_codes = results_dir + "{sample}/matched_genes_codes.txt",
+                    custom_temp = results_dir + "{sample}/custom_tmp.bed",
+                    custom_sorted = results_dir + "{sample}/custom_sorted.bed",
+                    custom_bed = results_dir + "{sample}/custom.bed"
+                conda:
+                    "envs/bedtools.yaml"
+                log:
+                    log_dir + "custombed.log"
+                shell:
+                    """
+                    zgrep -iwf {input[0]} resources/{config[REFERENCE_VERSION]}_gene_names.txt.gz | awk '{{print $2}}' > {output.matched_genes}
+                    zgrep -viwf {output.matched_genes} {input[0]} > {output.unmatched_genes}
+                    zgrep -iwf {input[0]} resources/{config[REFERENCE_VERSION]}_gene_names.txt.gz | awk '{{print $1}}' > {output.matched_genes_codes}
+                    zgrep -wf {output.matched_genes_codes} resources/{config[REFERENCE_VERSION]}_gene_db.txt | awk '{{i=1; while (i<= int($8)) {n=split($9,a,/,/);n=split($10,b,/,/); print $2\"\t\"a[i]\"\t\"b[i]; i+=1}}}' > {output.custom_temp}
+                    bedtools sort -i {output.custom_temp} > {output.custom_sorted}
+                    bedtools merge -i {output.custom_sorted} > {output.custom_bed}
+                    rm {output.custom_sorted} {output.custom_temp}
+                    """
+
             BED = "true"
-            path_bed = "%s/custom.bed" % (results_dir)
+            path_bed = results_dir + "{sample}/custom.bed"
 
 if config["USE_OWN_TEMP_DIR"] == "true":
     tmp_dir = config["TEMPORARY_DIR"]
