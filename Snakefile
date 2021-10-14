@@ -420,7 +420,7 @@ if filter_string == "true":
                 rules.variantfilter.output.variant_results_file_filtered
             output:
                 annotated_variant_results_file = results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz",
-                annotated_variant_results_file = results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz.tbi",
+                annotated_variant_results_file_index = results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz.tbi",
                 annotated_variant_results_text = results_dir + "{sample}/{sample}_SNPindel_annotated.txt"
             conda:
                 "envs/annotation.yaml"
@@ -1101,8 +1101,8 @@ if results_report == "true":
                     path_gene_list
                 output:
                     SNPindel_annotation_report = reports_dir + "{sample}/{sample}_annovar_SNPindel.txt"
-                    variant_annotation_file_zipped = results_dir + ""
-                    variant_annotation_file_zipped_index = results_dir + ""
+                    variant_annotation_file_zipped = results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz",
+                    variant_annotation_file_zipped_index = results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz.tbi"
                 conda:
                     "envs/AGS.yaml"
                 params:
@@ -1111,12 +1111,62 @@ if results_report == "true":
                     sample = "{sample}"
                 log:
                     log_dir + "variantannotationreport.log"
-                shell: #the first argument has to be a vcf so gzip -d
+                shell:
                     """
                     gzip -d {input[0]}
                     python scripts/simpleannotationreport.py {params.results}{params.sample}/{params.sample}_SNPindel_annotated.vcf {input[1]} {output.SNPindel_annotation_report}
                     bgzip {params.results}{params.sample}/{params.sample}_SNPindel_annotated.vcf
                     tabix -p vcf {output.variant_annotation_file_zipped}
+                    """
+
+        if expansion == "true":
+            rule expansionannotationreport:
+                input:
+                    rules.expansionannotation.output.annotated_expansion_file,
+                    path_gene_list
+                output:
+                    expansion_annotation_report = reports_dir + "{sample}/{sample}_annovar_expansions.txt",
+                    expansion_annotation_file_zipped = results_dir + "{sample}/{sample}_expansions_annotated.vcf.gz",
+                    expansion_annotation_file_zipped_index = results_dir + "{sample}/{sample}_expansions_annotated.vcf.gz.tbi"
+                conda:
+                    "envs/AGS.yaml"
+                params:
+                    out_dir = reports_dir,
+                    results = results_dir,
+                    sample = "{sample}"
+                log:
+                    log_dir + "expansionannotationreport.log"
+                shell:
+                    """
+                    gzip -d {input[0]}
+                    python scripts/simpleannotationreport.py {params.results}{params.sample}/{params.sample}_expansions_annotated.vcf {input[1]} {output.expansion_annotation_report}
+                    bgzip {params.results}{params.sample}/{params.sample}_expansions_annotated.vcf
+                    tabix -p vcf {output.expansion_annotation_file_zipped}
+                    """
+
+        if genotypeSTR == "true":
+            rule STRannotationreport:
+                input:
+                    rules.STRannotation.output.annotated_EHDN_expansion_file,
+                    path_gene_list
+                output:
+                    STR_annotation_report = reports_dir + "{sample}/{sample}_annovar_STR.txt",
+                    STR_annotation_file_zipped = results_dir + "{sample}/{sample}_EHDNexpansions_annotated.vcf.gz",
+                    STR_annotation_file_zipped_index = results_dir + "{sample}/{sample}_EHDNexpansions_annotated.vcf.gz.tbi"
+                conda:
+                    "envs/runAGS.yaml"
+                params:
+                    out_dir = reports_dir,
+                    results = results_dir,
+                    sample = "{sample}"
+                log:
+                    log_dir + "STRannotationreport.log"
+                shell:
+                    """
+                    gzip -d {input[0]}
+                    python scripts/simpleannotationreport.py {params.results}{params.sample}/{params.sample}_STR_annotated.vcf {input[1]} {output.STR_annotation_report}
+                    bgzip {params.results}{params.sample}/{params.sample}_STR_annotated.vcf
+                    tabix -p vcf {output.STR_annotation_file_zipped}
                     """
 
         if (SV or MEI) == "true":
@@ -1194,20 +1244,45 @@ if (results_report and annotation and variantcalling and SV and MEI) == "true":
             rules.variantannotationreport.output.SNPindel_annotation_report,
             rules.SVMEIannotation.output.SV_MEI_annotation_file
         output:
+            temp_SV_MEI_variants = reports_dir + "{sample}/{sample}_temp_SV_MEI_variants.tsv",
+            temp_SNVindel_variants = reports_dir + "{sample}/{sample}_temp_SNVindel_variants.tsv",
             concise_report = reports_dir + "{sample}/{sample}_all_variants.tsv"
         params:
-            out_dir = results_dir,
-            sample = "{sample}"
+            report_header = "scripts/all_variants_report_header.txt"
         log:
             log_dir + "conciseresultsreport.log"
         shell:
             """
+            python scripts/concisereportSVandMEI.py {input[1]} {output.temp_SV_MEI_variants} {input[0]} {output.temp_SNVindel_variants} {params.report_header} {output.concise_report}
             """
 
-    if (results_report and annotation and expansion) == "true":
-        rule addexpansiontoreport:
-            input:
-                rules.conciseresultsreport.output.concise_report
+    if expansion or genotypeSTR == "true":
+        if expansion == "true":
+            rule addexpansiontoreport:
+                input:
+                    rules.conciseresultsreport.output.concise_report,
+                    rules.expansionannotationreport.output.expansion_annotation_report
+                output:
+                    temp_expansion_variants = reports_dir + "{sample}/{sample}_temp_expansion_variants.tsv"
+                log:
+                    log_dir + "conciseresultsreportexpansion.log"
+                shell:
+                    """
+                    python concisereportexpansion.py {input[1]} {output.temp_expansion_variants} {input[0]}
+                    """
+        if genotypeSTR == "true":
+            rule addSTRtoreport:
+                input:
+                    rules.conciseresultsreport.output.concise_report,
+                    rules.STRannotationreport.output.STR_annotation_report
+                output:
+                    temp_STR_variants = reports_dir + "{sample}/{sample}_temp_STR_variants.tsv"
+                log:
+                    log_dir + "conciseresultsreportSTR.log"
+                shell:
+                    """
+                    python concisereportSTR.py {input[1]} {output.temp_STR_variants} {input[0]}
+                    """
 
 if (results_report and annotation and variantcalling and SV) == "true":
     rule conciseresultsreport:
@@ -1215,20 +1290,45 @@ if (results_report and annotation and variantcalling and SV) == "true":
             rules.variantannotationreport.output.SNPindel_annotation_report,
             rules.SVannotation.output.SV_annotation_file
         output:
+            temp_SV_variants = reports_dir + "{sample}/{sample}_temp_SV_variants.tsv",
+            temp_SNVindel_variants = reports_dir + "{sample}/{sample}_temp_SNVindel_variants.tsv",
             concise_report = reports_dir + "{sample}/{sample}_all_variants.tsv"
         params:
-            out_dir = results_dir,
-            sample = "{sample}"
+            report_header = "scripts/all_variants_report_header.txt"
         log:
             log_dir + "conciseresultsreport.log"
         shell:
             """
+            python scripts/concisereportSVorMEI.py {input[1]} {output.temp_SV_variants} {input[0]} {output.temp_SNVindel_variants} {params.report_header} {output.concise_report}
             """
 
-    if (results_report and annotation and expansion) == "true":
-        rule addexpansiontoreport:
-            input:
-                rules.conciseresultsreport.output.concise_report
+    if expansion or genotypeSTR == "true":
+        if expansion == "true":
+            rule addexpansiontoreport:
+                input:
+                    rules.conciseresultsreport.output.concise_report,
+                    rules.expansionannotationreport.output.expansion_annotation_report
+                output:
+                    temp_expansion_variants = reports_dir + "{sample}/{sample}_temp_expansion_variants.tsv"
+                log:
+                    log_dir + "conciseresultsreportexpansion.log"
+                shell:
+                    """
+                    python concisereportexpansion.py {input[1]} {output.temp_expansion_variants} {input[0]}
+                    """
+        if genotypeSTR == "true":
+            rule addSTRtoreport:
+                input:
+                    rules.conciseresultsreport.output.concise_report,
+                    rules.STRannotationreport.output.STR_annotation_report
+                output:
+                    temp_STR_variants = reports_dir + "{sample}/{sample}_temp_STR_variants.tsv"
+                log:
+                    log_dir + "conciseresultsreportSTR.log"
+                shell:
+                    """
+                    python concisereportSTR.py {input[1]} {output.temp_STR_variants} {input[0]}
+                    """
 
 if (results_report and annotation and variantcalling and MEI) == "true":
     rule conciseresultsreport:
@@ -1236,21 +1336,45 @@ if (results_report and annotation and variantcalling and MEI) == "true":
             rules.variantannotationreport.output.SNPindel_annotation_report,
             rules.MEIannotation.output.MEI_annotation_file
         output:
+            temp_MEI_variants = reports_dir + "{sample}/{sample}_temp_MEI_variants.tsv",
+            temp_SNVindel_variants = reports_dir + "{sample}/{sample}_temp_SNVindel_variants.tsv",
             concise_report = reports_dir + "{sample}/{sample}_all_variants.tsv"
         params:
-            out_dir = results_dir,
-            sample = "{sample}"
+            report_header = "scripts/all_variants_report_header.txt"
         log:
             log_dir + "conciseresultsreport.log"
         shell:
             """
+            python scripts/concisereportSVorMEI.py {input[1]} {output.temp_MEI_variants} {input[0]} {output.temp_SNVindel_variants} {params.report_header} {output.concise_report}
             """
 
-    if (results_report and annotation and expansion) == "true":
-        rule addexpansiontoreport:
-            input:
-                rules.conciseresultsreport.output.concise_report
-
+    if expansion or genotypeSTR == "true":
+        if expansion == "true":
+            rule addexpansiontoreport:
+                input:
+                    rules.conciseresultsreport.output.concise_report,
+                    rules.expansionannotationreport.output.expansion_annotation_report
+                output:
+                    temp_expansion_variants = reports_dir + "{sample}/{sample}_temp_expansion_variants.tsv"
+                log:
+                    log_dir + "conciseresultsreportexpansion.log"
+                shell:
+                    """
+                    python concisereportexpansion.py {input[1]} {output.temp_expansion_variants} {input[0]}
+                    """
+        if genotypeSTR == "true":
+            rule addSTRtoreport:
+                input:
+                    rules.conciseresultsreport.output.concise_report,
+                    rules.STRannotationreport.output.STR_annotation_report
+                output:
+                    temp_STR_variants = reports_dir + "{sample}/{sample}_temp_STR_variants.tsv"
+                log:
+                    log_dir + "conciseresultsreportSTR.log"
+                shell:
+                    """
+                    python concisereportSTR.py {input[1]} {output.temp_STR_variants} {input[0]}
+                    """
 
 if alsgenescanner == "true":
     rule runAGS:
