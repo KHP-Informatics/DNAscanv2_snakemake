@@ -138,7 +138,7 @@ if rm_dup == "true":
 #sorting out the gene list to see if there are any unmatched genes in the reference and to make a custom bed out of that if no bed file is provided
 if BED or path_gene_list:
     if len(path_bed) == 0:
-        if len(path_gene_list) != 0:
+        if len(path_gene_list) != 0: #need to change this
             os.system("zgrep -iwf %s resources/%s_gene_names.txt.gz | awk '{print $2}' > %s/matched_genes.txt" % (path_gene_list, reference, results_dir))
             os.system("zgrep -viwf %s/matched_genes.txt %s > %s/unmatched_genes.txt" % (results_dir, path_gene_list, results_dir))
             os.system("zgrep -iwf %s resources/%s_gene_names.txt.gz | awk '{print $1}' > %s/matched_genes_codes.txt" % (path_gene_list, reference, results_dir))
@@ -599,7 +599,7 @@ if SV == "true":
                     merged_SV = results_dir + "{sample}/{sample}_merged_SV.vcf.gz",
                     merged_SV_index = results_dir + "{sample}/{sample}_merged_SV.vcf.gz.tbi"
                 conda:
-                    "envs/variantcallingwithBED.yaml"
+                    "envs/SV.yaml"
                 params:
                     temp_bed = results_dir + "{sample}/temp.bed.gz",
                     sorted_bed = results_dir + "{sample}/sorted.bed.gz",
@@ -860,7 +860,7 @@ if MEI == "true":
                     sample = "{sample}",
                     genomebuild = annotsv_ref_version
                 log:
-                    log_dir + "MEIannotation.log"
+                    log_dir + "SVannotation.log"
                 shell:
                     """
                     cpan YAML::XS
@@ -1154,7 +1154,7 @@ if results_report == "true":
                     STR_annotation_file_zipped = results_dir + "{sample}/{sample}_EHDNexpansions_annotated.vcf.gz",
                     STR_annotation_file_zipped_index = results_dir + "{sample}/{sample}_EHDNexpansions_annotated.vcf.gz.tbi"
                 conda:
-                    "envs/runAGS.yaml"
+                    "envs/AGS.yaml"
                 params:
                     out_dir = reports_dir,
                     results = results_dir,
