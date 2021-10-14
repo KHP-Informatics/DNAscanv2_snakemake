@@ -493,7 +493,7 @@ if expansion == "true":
             expansion_file = results_dir + "{sample}/{sample}_expansions.vcf.gz"
             expansion_file_index = results_dir + "{sample}/{sample}_expansions.vcf.gz.tbi"
         conda:
-            "envs/expansion.yaml"
+            "envs/variantcalling.yaml"
         params:
             out_dir = results_dir,
             sample = "{sample}",
@@ -540,7 +540,7 @@ if STR == "true":
             STR_profile = results_dir + "{sample}/{sample}_expansiondenovo.str_profile.json"
             genotypeSTR_input = results_dir + "{sample}/{sample}_genotypeSTRinput.txt"
         conda:
-            "envs/expansion.yaml"
+            "envs/variantcalling.yaml"
         params:
             out_dir = results_dir,
             sample = "{sample}"
@@ -563,7 +563,7 @@ if genotypeSTR == "true":
             EHDN_expansion_file = results_dir + "{sample}/{sample}_EHDNexpansions.vcf.gz",
             EHDN_expansion_file_index = results_dir + "{sample}/{sample}_EHDNexpansions.vcf.gz"
         conda:
-            "envs/expansion.yaml"
+            "envs/variantcalling.yaml"
         params:
             out_dir = results_dir,
             sample = "{sample}",
