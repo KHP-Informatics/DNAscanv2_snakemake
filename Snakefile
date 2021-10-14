@@ -617,7 +617,7 @@ if SV == "true":
                     merged_SV = results_dir + "{sample}/{sample}_merged_SV.vcf.gz",
                     merged_SV_index = results_dir + "{sample}/{sample}_merged_SV.vcf.gz.tbi"
                 conda:
-                    "envs/SV.yaml"
+                    "envs/variantcalling.yaml"
                 params:
                     temp_bed = results_dir + "{sample}/temp.bed.gz",
                     sorted_bed = results_dir + "{sample}/sorted.bed.gz",
