@@ -1029,7 +1029,7 @@ if (virus or bacteria or custom_microbes) == "true":
             samtools view -@ {config[NUMBER_CPU]} -hf 4 {input[0]} | samtools bam2fq -s {params.out_dir}{params.sample}/singleton_reads.fastq -@ {config[NUMBER_CPU]} - > {params.out_dir}{params.sample}/unaligned_reads.fastq
             cat {params.out_dir}{params.sample}/singleton_reads.fastq >> {params.out_dir}{params.sample}/unaligned_reads.fastq ; gzip {params.out_dir}{params.sample}/unaligned_reads.fastq
             """
-#need to do the separate reports in python scripts
+
     if virus == "true":
         rule identifyvirus:
             input:
