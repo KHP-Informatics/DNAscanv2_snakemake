@@ -327,7 +327,7 @@ if format == "cram" and SV == "true":
             bam_file = results_dir + "{sample}/{sample}_delly.bam"
             bam_file = results_dir + "{sample}/{sample}_delly.bam.bai"
         conda:
-            "envs/cramtobam.yaml"
+            "envs/samtools.yaml"
         log:
             log_dir + "cramtobam.log"
         shell:
