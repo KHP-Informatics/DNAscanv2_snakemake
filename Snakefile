@@ -64,7 +64,7 @@ path_melt = config["MELT_DIR"]
 #FILES FOR REFERENCE VERSIONS BASED ON ANALYSIS OPTIONS
 
 if reference == "hg19" or reference == "grch37":
-    path_expansionHunter_catalog = "resources/repeats/variant_catalog_hg19.json"
+    path_expansionHunter_catalog = "resources/repeats/hg19_variant_catalog.json"
     path_delly_exclude_regions = "resources/delly_hg19.excl.tsv"
     melt_zipped_files = path_melt + "me_refs/1KGP_Hg19/*zip"
     melt_bed = path_melt + "add_bed_files/1KGP_Hg19/hg19.genes.bed"
@@ -79,7 +79,7 @@ if reference == "hg19" or reference == "grch37":
 
 
 if reference == "hg38" or reference == "grch38":
-    path_expansionHunter_catalog = "resources/repeats/variant_catalog_hg38.json"
+    path_expansionHunter_catalog = "resources/repeats/hg38_variant_catalog.json"
     path_delly_exclude_regions = "resources/delly_hg38.excl.tsv"
     melt_zipped_files = path_melt + "me_refs/Hg38/*zip"
     melt_bed = path_melt + "add_bed_files/Hg38/Hg38.genes.bed"
