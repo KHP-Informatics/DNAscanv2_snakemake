@@ -24,6 +24,7 @@ exome = config["EXOME"]
 BED = config["BED"]
 RG = config["ADD_READ_GROUP"]
 rm_dup = config["REMOVE_DUPLICATES"]
+memory = config["MEM_GB"] * 1000
 
 #MAIN OUTPUT DIRECTORIES
 results_dir = config["OUT_DIR"]
@@ -138,7 +139,7 @@ if rm_dup == "true":
 #sorting out the gene list to see if there are any unmatched genes in the reference and to make a custom bed out of that if no bed file is provided
 if BED or path_gene_list:
     if len(path_bed) == 0:
-        if len(path_gene_list) != 0: 
+        if len(path_gene_list) != 0:
             rule custombed:
                 input:
                     path_gene_list
@@ -153,6 +154,8 @@ if BED or path_gene_list:
                     "envs/bedtools.yaml"
                 log:
                     log_dir + "custombed.log"
+                resources:
+                    mem_mb = memory
                 shell:
                     """
                     zgrep -iwf {input[0]} resources/{config[REFERENCE_VERSION]}_gene_names.txt.gz | awk '{{print $2}}' > {output.matched_genes}
@@ -196,7 +199,7 @@ if format == "fastq" and alignment == "true":
                 conda:
                     "envs/alignmentfast.yaml"
                 resources:
-                    mem_gb = ?
+                    mem_mb = memory
                 log:
                     log_dir + "alignmentpairedSNPindel.log"
                 shell:
@@ -226,7 +229,7 @@ if format == "fastq" and alignment == "true":
                         rg_hisat2 = rg_option_hisat2,
                         rg_bwa = rg_option_bwa
                     resources:
-                        mem_gb = ?
+                        mem_mb = memory
                     log:
                         log_dir + "alignmentpaired.log"
                     shell:
@@ -253,7 +256,7 @@ if format == "fastq" and alignment == "true":
                 conda:
                     "envs/alignmentfast.yaml"
                 resources:
-                    mem_gb = ?
+                    mem_mb = memory
                 log:
                     log_dir + "alignmentsinglefast.log"
                 shell:
@@ -281,7 +284,7 @@ if format == "fastq" and alignment == "true":
                         rg_hisat2 = rg_option_hisat2,
                         rg_bwa = rg_option_bwa
                     resources:
-                        mem_gb = ?
+                        mem_mb = memory
                     log:
                         log_dir + "alignmentsingle.log"
                     shell:
@@ -309,6 +312,8 @@ if format == "sam":
             "envs/samtools.yaml"
         log:
             log_dir + "samtobam.log"
+        resources:
+            mem_mb = memory
         shell:
             """
             samtools view -Sb {input[0]} > {output.bam_file}
@@ -330,6 +335,8 @@ if format == "cram" and SV == "true":
             "envs/samtools.yaml"
         log:
             log_dir + "cramtobam.log"
+        resources:
+            mem_mb = memory
         shell:
             """
             samtools view -b -h -@ {config[NUMBER_CPU]} -T {input[0]} -o {output.delly_bam} {input.input_file}
@@ -357,6 +364,8 @@ if variantcalling == "true":
                     sample = "{sample}"
                 log:
                     log_dir + "variantcallingwithBED.log"
+                resources:
+                    mem_mb = memory
                 shell:
                     """
                     bgzip -c {input[1]} > {params.temp_bed}
@@ -383,6 +392,8 @@ if variantcalling == "true":
                     sample = "{sample}"
                 log:
                     log_dir + "variantcallingwithexome.log"
+                resources:
+                    mem_mb = memory
                 shell:
                     """
                     {config[STRELKA_DIR]}bin/configureStrelkaGermlineWorkflow.py --bam {input[0]} --referenceFasta {input[1]} --runDir {params.out_dir}/{params.sample}/strelka --exome
@@ -405,6 +416,8 @@ if variantcalling == "true":
                     sample = "{sample}"
                 log:
                     log_dir + "variantcalling.log"
+                resources:
+                    mem_mb = memory
                 shell:
                     """
                     {config[STRELKA_DIR]}bin/configureStrelkaGermlineWorkflow.py --bam {input[0]} --referenceFasta {input[1]} --runDir {params.out_dir}/{params.sample}/strelka
@@ -413,8 +426,6 @@ if variantcalling == "true":
                     mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz.tbi {output.variant_results_file_unfiltered_index}
                     rm -r {params.out_dir}{params.sample}/strelka
                     """
-
-#need to find a way to annotate the unfiltered variant file
 
 if filter_string == "true":
     rule variantfilter:
@@ -427,6 +438,8 @@ if filter_string == "true":
             "envs/variantfilter.yaml"
         log:
             log_dir + "filtervariants.log"
+        resources:
+            mem_mb = memory
         shell:
             """
             bcftools filter -i '{config[VARIANT_FILTER_STRING]}' {input[0]} | bgzip -c > {output.variant_results_file_filtered} ; tabix -fp vcf {output.variant_results_file_filtered}
@@ -450,6 +463,8 @@ if filter_string == "true":
                 protocols = annovar_protocols
             log:
                 log_dir + "variantannotation.log"
+            resources:
+                mem_mb = memory
             shell:
                 """
                 perl {config[ANNOVAR_DIR]}table_annovar.pl --thread {config[NUMBER_CPU]} --vcfinput {input[0]} {config[ANNOVAR_DB]} -buildver {params.ref_version} -remove -protocol {params.protocols} -operation {params.operations} -nastring . --outfile {params.out_dir}{params.sample}/{sample}_annovar_SNPindel.vcf
@@ -476,6 +491,8 @@ else:
                 protocols = annovar_protocols
             log:
                 log_dir + "variantannotation.log"
+            resources:
+                mem_mb = memory
             shell:
                 """
                 perl {config[ANNOVAR_DIR]}table_annovar.pl --thread {config[NUMBER_CPU]} --vcfinput {input[0]} {config[ANNOVAR_DB]} -buildver {params.ref_version} -remove -protocol {params.protocols} -operation {params.operations} -nastring . --outfile {params.out_dir}{params.sample}/annovar_SNPindel.vcf
@@ -500,6 +517,8 @@ if expansion == "true":
             variant_catalog = path_expansionHunter_catalog
         log:
             log_dir + "expansion.log"
+        resources:
+            mem_mb = memory
         shell:
             """
             ExpansionHunter --reads {input[0]} --reference {input[1]} --variant-catalog {params.variant_catalog} --output-prefix {params.out_dir}{params.sample}_expansions
@@ -524,6 +543,8 @@ if expansion == "true":
                 protocols = annovar_protocols
             log:
                 log_dir + "expansionannotation.log"
+            resources:
+                mem_mb = memory
             shell:
                 """
                 perl {config[ANNOVAR_DIR]}table_annovar.pl --thread {config[NUMBER_CPU]} --vcfinput {input[0]} {config[ANNOVAR_DB]} -buildver {params.ref_version} -remove -protocol {params.protocols} -operation {params.operations} -nastring . --outfile {params.out_dir}{params.sample}/annovar_expansions.vcf
@@ -544,6 +565,8 @@ if STR == "true":
         params:
             out_dir = results_dir,
             sample = "{sample}"
+        resources:
+            mem_mb = memory
         log:
             log_dir + "STRprofile.log"
         shell:
@@ -571,6 +594,8 @@ if genotypeSTR == "true":
             EHDN_unmatched = results_dir + "{sample}/{sample}_EHDN_unmatched.csv"
         log:
             log_dir + "genotypeSTR.log"
+        resources:
+            mem_mb = memory
         shell:
             """
             python scripts/conversion_EHDN_catalog.py {input[0]} {input[1]} {output.EHDN_variant_catalog} {params.EHDN_unmatched} {params.EHDN_excluded}
@@ -596,6 +621,8 @@ if genotypeSTR == "true":
                 operations = annovar_operations
             log:
                 log_dir + "STRannotation.log"
+            resources:
+                mem_mb = memory
             shell:
                 """
                 perl {config[ANNOVAR_DIR]}table_annovar.pl --thread {config[NUMBER_CPU]} --vcfinput {input[0]} {config[ANNOVAR_DB]} -buildver {params.ref_version} -remove -protocol {params.protocols} -operation {params.operations} -nastring . --outfile {params.out_dir}{params.sample}/annovar_EHDNexpansions.vcf
@@ -626,6 +653,8 @@ if SV == "true":
                     delly_exclude_regions = path_delly_exclude_regions
                 log:
                     log_dir + "SVwithBED.log"
+                resources:
+                    mem_mb = memory
                 shell:
                     """
                     bgzip -c {input[2]} > {params.temp_bed}
@@ -636,15 +665,12 @@ if SV == "true":
                     mv {params.out_dir}{params.sample}/SV_manta/results/variants/diploidSV.vcf.gz {params.out_dir}{params.sample}/{params.sample}_SV_manta.vcf.gz
                     gzip -d {params.out_dir}{params.sample}/{params.sample}_SV_manta.vcf.gz
                     rm -r {params.out_dir}{params.sample}/SV_manta
-
                     delly call -g {input[1]} -o {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf -x {params.delly_exclude_regions} {input[0]}
                     bcftools view {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf > {output.delly_SV}
-
                     ls {params.out_dir}{params.sample}/*SV.vcf > {params.out_dir}{params.sample}/survivor_sample_files
                     SURVIVOR merge {params.out_dir}{params.sample}/survivor_sample_files 1000 1 1 1 0 30 {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf
                     perl scripts/vcf-sort.pl {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf | bgzip -c > {output.merged_SV}
                     tabix -p vcf {output.merged_SV}
-
                     rm {params.out_dir}{params.sample}/survivor_sample_files {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf.csi {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf
                     """
 
@@ -663,6 +689,8 @@ if SV == "true":
                             genomebuild = annotsv_ref_version
                         log:
                             log_dir + "SVannotation.log"
+                        resources:
+                            mem_mb = memory
                         shell:
                             """
                             cpan YAML::XS
@@ -685,6 +713,8 @@ if SV == "true":
                             genomebuild = annotsv_ref_version
                         log:
                             log_dir + "SVannotation.log"
+                        resources:
+                            mem_mb = memory
                         shell:
                             """
                             cpan YAML::XS
@@ -710,6 +740,8 @@ if SV == "true":
                     delly_exclude_regions = path_delly_exclude_regions
                 log:
                     log_dir + "SV.log"
+                resources:
+                    mem_mb = memory
                 shell:
                     """
                     {config[MANTA_DIR]}bin/configManta.py --bam {input[0]} --referenceFasta {input[1]} --runDir {params.out_dir}{params.sample}/SV_manta
@@ -717,15 +749,12 @@ if SV == "true":
                     mv {params.out_dir}{params.sample}/SV_manta/results/variants/diploidSV.vcf.gz {params.out_dir}{params.sample}/{params.sample}_SV_manta.vcf.gz
                     gzip -d {params.out_dir}{params.sample}/{params.sample}_SV_manta.vcf.gz
                     rm -r {params.out_dir}{params.sample}/SV_manta
-
                     delly call -g {input[1]} -o {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf -x {params.delly_exclude_regions} {input[0]}
                     bcftools view {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf > {output.delly_SV}
-
                     ls {params.out_dir}{params.sample}/*SV.vcf > {params.out_dir}{params.sample}/survivor_sample_files
                     {config[SURVIVOR_DIR]}SURVIVOR merge {params.out_dir}{params.sample}/survivor_sample_files 1000 1 1 1 0 30 {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf
                     perl scripts/vcf-sort.pl {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf | bgzip -c > {output.merged_SV}
                     tabix -p vcf {output.merged_SV}
-
                     rm {params.out_dir}{params.sample}/survivor_sample_files {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf.csi {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf
                     """
 
@@ -744,6 +773,8 @@ if SV == "true":
                             genomebuild = annotsv_ref_version
                         log:
                             log_dir + "SVannotation.log"
+                        resources:
+                            mem_mb = memory
                         shell:
                             """
                             cpan YAML::XS
@@ -766,6 +797,8 @@ if SV == "true":
                             genomebuild = annotsv_ref_version
                         log:
                             log_dir + "SVannotation.log"
+                        resources:
+                            mem_mb = memory
                         shell:
                             """
                             cpan YAML::XS
@@ -794,6 +827,8 @@ if MEI == "true":
                 removal_dir=bam_file
             log:
                 log_dir + "MEIexome.log"
+            resources:
+                mem_mb = memory
             shell:
                 """
                 mkdir {params.out_dir}/{params.sample}/melt
@@ -828,6 +863,8 @@ if MEI == "true":
                 removal_dir=bam_file
             log:
                 log_dir + "MEI.log"
+            resources:
+                mem_mb = memory
             shell:
                 """
                 mkdir {params.out_dir}/{params.sample}/melt
@@ -857,6 +894,8 @@ if MEI == "true":
                     genomebuild = annotsv_ref_version
                 log:
                     log_dir + "MEIannotation.log"
+                resources:
+                    mem_mb = memory
                 shell:
                     """
                     cpan YAML::XS
@@ -879,6 +918,8 @@ if MEI == "true":
                     genomebuild = annotsv_ref_version
                 log:
                     log_dir + "SVannotation.log"
+                resources:
+                    mem_mb = memory
                 shell:
                     """
                     cpan YAML::XS
@@ -905,6 +946,8 @@ if SV == "true" and MEI == "true":
             MEI_vcf = results_dir + "{sample}/merging/{sample}_MEI.vcf"
         log:
             log_dir + "SVandMEImerging.log"
+        resources:
+            mem_mb = memory
         shell:
             """
             mkdir {params.merged_dir}
@@ -932,6 +975,8 @@ if SV == "true" and MEI == "true":
                     genomebuild = annotsv_ref_version
                 log:
                     log_dir + "SVandMEIannotation.log"
+                resources:
+                    mem_mb = memory
                 shell:
                     """
                     cpan YAML::XS
@@ -954,6 +999,8 @@ if SV == "true" and MEI == "true":
                     genomebuild = annotsv_ref_version
                 log:
                     log_dir + "SVandMEIannotation.log"
+                resources:
+                    mem_mb = memory
                 shell:
                     """
                     cpan YAML::XS
@@ -975,6 +1022,8 @@ if (virus or bacteria or custom_microbes) == "true":
             sample = "{sample}"
         log:
             log_dir + "extractnonhumanreads.log"
+        resources:
+            mem_mb = memory
         shell:
             """
             samtools view -@ {config[NUMBER_CPU]} -hf 4 {input[0]} | samtools bam2fq -s {params.out_dir}{params.sample}/singleton_reads.fastq -@ {config[NUMBER_CPU]} - > {params.out_dir}{params.sample}/unaligned_reads.fastq
@@ -995,6 +1044,8 @@ if (virus or bacteria or custom_microbes) == "true":
                 sample = "{sample}"
             log:
                 log_dir + "identifyvirus.log"
+            resources:
+                mem_mb = memory
             shell:
                 """
                 hisat2 --no-spliced-alignment -p {config[NUMBER_CPU]} -x {config[VIRUS_INDEX]} -U {input[0]} | samtools view -@ {config[NUMBER_CPU]} -hSb - | samtools sort -@ {config[NUMBER_CPU]} -T {params.out_dir}{params.sample}tempvirus.file -o {params.out_dir}{params.sample}/{params.sample}_output_virus.bam -
@@ -1016,6 +1067,8 @@ if (virus or bacteria or custom_microbes) == "true":
                 sample = "{sample}"
             log:
                 log_dir + "identifybacteria.log"
+            resources:
+                mem_mb = memory
             shell:
                 """
                 hisat2 --no-spliced-alignment -p {config[NUMBER_CPU]} -x {config[BACTERIA_INDEX]} -U {input[0]} | samtools view -@ {config[NUMBER_CPU]} -hSb - | samtools sort -@ {config[NUMBER_CPU]} -T {params.out_dir}{params.sample}tempbacteria.file -o {params.out_dir}{params.sample}/{params.sample}_output_bacteria.bam -
@@ -1037,6 +1090,8 @@ if (virus or bacteria or custom_microbes) == "true":
                 sample = "{sample}"
             log:
                 log_dir + "identifycustommicrobes.log"
+            resources:
+                mem_mb = memory
             shell:
                 """
                 hisat2 --no-spliced-alignment -p {config[NUMBER_CPU]} -x {config[CUSTOM_MICROBES_INDEX]} -U {input[0]} | samtools view -@ {config[NUMBER_CPU]} -hSb - | samtools sort -@ {config[NUMBER_CPU]} -T {params.out_dir}{params.sample}tempmicrobes.file -o {params.out_dir}{params.sample}/{params.sample}_output_microbes.bam -
@@ -1055,6 +1110,8 @@ if alignment_report == "true":
             "envs/simplereports.yaml"
         log:
             log_dir + "alignmentreport.log"
+        resources:
+            mem_mb = memory
         shell:
             """
             samtools flagstat -@ {config[NUMBER_CPU]} {input[0]} > {output.flagstat}
@@ -1074,6 +1131,8 @@ if sequencing_report == "true" and format == "fastq":
             out_dir = reports_dir
         log:
             log_dir + "sequencingreport.log"
+        resources:
+            mem_mb = memory
         shell:
             """
             fastqc -o {params.out_dir} -f fastq -t {config[NUMBER_CPU]} {input[0]} {input[1]}
@@ -1092,6 +1151,8 @@ if calls_report == "true" and variantcalling == "true":
             sample = "{sample}"
         log:
             log_dir + "callsreport.log"
+        resources:
+            mem_mb = memory
         shell:
             """
             bcftools stats --threads {config[NUMBER_CPU]} {input.variant_results_file} > {output.vcfstats}
@@ -1105,6 +1166,8 @@ if (alignment_report or calls_report or sequencing_report) == "true":
             "envs/simplereports.yaml"
         log:
             log_dir + "multireport.log"
+        resources:
+            mem_mb = memory
         shell:
             """
             multiqc -o {input[0]} {input[0]}
@@ -1129,6 +1192,8 @@ if results_report == "true":
                     sample = "{sample}"
                 log:
                     log_dir + "variantannotationreport.log"
+                resources:
+                    mem_mb = memory
                 shell:
                     """
                     gzip -d {input[0]}
@@ -1154,6 +1219,8 @@ if results_report == "true":
                     sample = "{sample}"
                 log:
                     log_dir + "expansionannotationreport.log"
+                resources:
+                    mem_mb = memory
                 shell:
                     """
                     gzip -d {input[0]}
@@ -1179,6 +1246,8 @@ if results_report == "true":
                     sample = "{sample}"
                 log:
                     log_dir + "STRannotationreport.log"
+                resources:
+                    mem_mb = memory
                 shell:
                     """
                     gzip -d {input[0]}
@@ -1202,6 +1271,8 @@ if results_report == "true":
                         ref_version = annovar_ref_version
                     log:
                         log_dir + "SVMEIreport.log"
+                    resources:
+                        mem_mb = memory
                     shell:
                         """
                         cpan YAML::XS
@@ -1225,6 +1296,8 @@ if results_report == "true":
                             ref_version = annovar_ref_version
                         log:
                             log_dir + "SVreport.log"
+                        resources:
+                            mem_mb = memory
                         shell:
                             """
                             cpan YAML::XS
@@ -1247,6 +1320,8 @@ if results_report == "true":
                             ref_version = annovar_ref_version
                         log:
                             log_dir + "MEIreport.log"
+                        resources:
+                            mem_mb = memory
                         shell:
                             """
                             cpan YAML::XS
@@ -1269,6 +1344,8 @@ if (results_report and annotation and variantcalling and SV and MEI) == "true":
             report_header = "scripts/all_variants_report_header.txt"
         log:
             log_dir + "conciseresultsreport.log"
+        resources:
+            mem_mb = memory
         shell:
             """
             python scripts/concisereportSVandMEI.py {input[1]} {output.temp_SV_MEI_variants} {input[0]} {output.temp_SNVindel_variants} {params.report_header} {output.concise_report}
@@ -1284,6 +1361,8 @@ if (results_report and annotation and variantcalling and SV and MEI) == "true":
                     temp_expansion_variants = reports_dir + "{sample}/{sample}_temp_expansion_variants.tsv"
                 log:
                     log_dir + "conciseresultsreportexpansion.log"
+                resources:
+                    mem_mb = memory
                 shell:
                     """
                     python concisereportexpansion.py {input[1]} {output.temp_expansion_variants} {input[0]}
@@ -1297,6 +1376,8 @@ if (results_report and annotation and variantcalling and SV and MEI) == "true":
                     temp_STR_variants = reports_dir + "{sample}/{sample}_temp_STR_variants.tsv"
                 log:
                     log_dir + "conciseresultsreportSTR.log"
+                resources:
+                    mem_mb = memory
                 shell:
                     """
                     python concisereportSTR.py {input[1]} {output.temp_STR_variants} {input[0]}
@@ -1315,6 +1396,8 @@ if (results_report and annotation and variantcalling and SV) == "true":
             report_header = "scripts/all_variants_report_header.txt"
         log:
             log_dir + "conciseresultsreport.log"
+        resources:
+            mem_mb = memory
         shell:
             """
             python scripts/concisereportSVorMEI.py {input[1]} {output.temp_SV_variants} {input[0]} {output.temp_SNVindel_variants} {params.report_header} {output.concise_report}
@@ -1330,6 +1413,8 @@ if (results_report and annotation and variantcalling and SV) == "true":
                     temp_expansion_variants = reports_dir + "{sample}/{sample}_temp_expansion_variants.tsv"
                 log:
                     log_dir + "conciseresultsreportexpansion.log"
+                resources:
+                    mem_mb = memory
                 shell:
                     """
                     python concisereportexpansion.py {input[1]} {output.temp_expansion_variants} {input[0]}
@@ -1343,6 +1428,8 @@ if (results_report and annotation and variantcalling and SV) == "true":
                     temp_STR_variants = reports_dir + "{sample}/{sample}_temp_STR_variants.tsv"
                 log:
                     log_dir + "conciseresultsreportSTR.log"
+                resources:
+                    mem_mb = memory
                 shell:
                     """
                     python concisereportSTR.py {input[1]} {output.temp_STR_variants} {input[0]}
@@ -1361,6 +1448,8 @@ if (results_report and annotation and variantcalling and MEI) == "true":
             report_header = "scripts/all_variants_report_header.txt"
         log:
             log_dir + "conciseresultsreport.log"
+        resources:
+            mem_mb = memory
         shell:
             """
             python scripts/concisereportSVorMEI.py {input[1]} {output.temp_MEI_variants} {input[0]} {output.temp_SNVindel_variants} {params.report_header} {output.concise_report}
@@ -1376,10 +1465,13 @@ if (results_report and annotation and variantcalling and MEI) == "true":
                     temp_expansion_variants = reports_dir + "{sample}/{sample}_temp_expansion_variants.tsv"
                 log:
                     log_dir + "conciseresultsreportexpansion.log"
+                resources:
+                    mem_mb = memory
                 shell:
                     """
                     python concisereportexpansion.py {input[1]} {output.temp_expansion_variants} {input[0]}
                     """
+
         if genotypeSTR == "true":
             rule addSTRtoreport:
                 input:
@@ -1389,6 +1481,8 @@ if (results_report and annotation and variantcalling and MEI) == "true":
                     temp_STR_variants = reports_dir + "{sample}/{sample}_temp_STR_variants.tsv"
                 log:
                     log_dir + "conciseresultsreportSTR.log"
+                resources:
+                    mem_mb = memory
                 shell:
                     """
                     python concisereportSTR.py {input[1]} {output.temp_STR_variants} {input[0]}
@@ -1412,6 +1506,8 @@ if alsgenescanner == "true":
             clinvar_list = "resources/alsgenescanner/list_genes_clinvar.txt",
             review_list = "resources/alsgenescanner/list_genes_manual_review.txt",
             sample = "{sample}"
+        resources:
+            mem_mb = memory
         shell:
             """
             python scripts/alsgenescanner.py {input[0]} {output.alsgenescanner_all}
