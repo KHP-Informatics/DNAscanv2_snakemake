@@ -201,37 +201,34 @@ rule all:
 
 #sorting out the gene list to see if there are any unmatched genes in the reference and to make a custom bed out of that if no bed file is provided
 if BED == "true" or path_gene_list:
-    if len(path_bed) == 0 and len(path_gene_list) != 0:
-#sort this out bloody hell
-rule custombed:
-    input:
-        path_gene_list
-    output:
-        matched_genes = results_dir + "{sample}/matched_genes.txt",
-        unmatched_genes = results_dir + "{sample}/unmatched_genes.txt",
-        matched_genes_codes = results_dir + "{sample}/matched_genes_codes.txt",
-        custom_temp = results_dir + "{sample}/custom_tmp.bed",
-        custom_sorted = results_dir + "{sample}/custom_sorted.bed",
-        custom_bed = results_dir + "{sample}/custom.bed"
-    conda:
-        "envs/bedtools.yaml"
-    log:
-        log_dir + "custombed.log"
-    resources:
-        mem_mb = memory
-    shell:
-        """
-        zgrep -iwf {input[0]} resources/{config[REFERENCE_VERSION]}_gene_names.txt.gz | awk '{{print $2}}' > {output.matched_genes}
-        zgrep -viwf {output.matched_genes} {input[0]} > {output.unmatched_genes}
-        zgrep -iwf {input[0]} resources/{config[REFERENCE_VERSION]}_gene_names.txt.gz | awk '{{print $1}}' > {output.matched_genes_codes}
-        zgrep -wf {output.matched_genes_codes} resources/{config[REFERENCE_VERSION]}_gene_db.txt | awk '{{i=1; while (i<= int($8)) {n=split($9,a,/,/);n=split($10,b,/,/); print $2\"\t\"a[i]\"\t\"b[i]; i+=1}}}' > {output.custom_temp}
-        bedtools sort -i {output.custom_temp} > {output.custom_sorted}
-        bedtools merge -i {output.custom_sorted} > {output.custom_bed}
-        rm {output.custom_sorted} {output.custom_temp}
-        """
-
-if len(path_gene_list) != 0 and len(path_bed) == 0:
-    path_bed = results_dir + "{sample}/custom.bed"
+    if path_bed == "" and path_gene_list != "":
+        rule custombed:
+            input:
+                path_gene_list
+            output:
+                matched_genes = results_dir + "{sample}/matched_genes.txt",
+                unmatched_genes = results_dir + "{sample}/unmatched_genes.txt",
+                matched_genes_codes = results_dir + "{sample}/matched_genes_codes.txt",
+                custom_temp = results_dir + "{sample}/custom_tmp.bed",
+                custom_sorted = results_dir + "{sample}/custom_sorted.bed",
+                custom_bed = results_dir + "{sample}/custom.bed"
+            conda:
+                "envs/bedtools.yaml"
+            log:
+                log_dir + "custombed.log"
+            resources:
+                mem_mb = memory
+            shell:
+                """
+                zgrep -iwf {input[0]} resources/{config[REFERENCE_VERSION]}_gene_names.txt.gz | awk '{{print $2}}' > {output.matched_genes}
+                zgrep -viwf {output.matched_genes} {input[0]} > {output.unmatched_genes}
+                zgrep -iwf {input[0]} resources/{config[REFERENCE_VERSION]}_gene_names.txt.gz | awk '{{print $1}}' > {output.matched_genes_codes}
+                zgrep -wf {output.matched_genes_codes} resources/{config[REFERENCE_VERSION]}_gene_db.txt | awk '{{i=1; while (i<= int($8)) {n=split($9,a,/,/);n=split($10,b,/,/); print $2\"\t\"a[i]\"\t\"b[i]; i+=1}}}' > {output.custom_temp}
+                bedtools sort -i {output.custom_temp} > {output.custom_sorted}
+                bedtools merge -i {output.custom_sorted} > {output.custom_bed}
+                rm {output.custom_sorted} {output.custom_temp}
+                """
+        path_bed = results_dir + "{sample}/custom.bed"
 
 if config["USE_OWN_TEMP_DIR"] == "true":
     tmp_dir = config["TEMPORARY_DIR"]
@@ -389,8 +386,8 @@ if format == "cram" and SV == "true":
             path_reference,
             input_file = input_dir + "{sample}.cram"
         output:
-            bam_file = results_dir + "{sample}/{sample}_delly.bam",
-            bam_file_index = results_dir + "{sample}/{sample}_delly.bam.bai"
+            delly_bam = results_dir + "{sample}/{sample}_delly.bam",
+            delly_bam_index = results_dir + "{sample}/{sample}_delly.bam.bai"
         conda:
             "envs/samtools.yaml"
         log:
@@ -402,6 +399,7 @@ if format == "cram" and SV == "true":
             samtools view -b -h -@ {config[NUMBER_CPU]} -T {input[0]} -o {output.delly_bam} {input.input_file}
             samtools index -@ {config[NUMBER_CPU]} {output.delly_bam}
             """
+     bam_file = results_dir + "{sample}/{sample}_delly.bam"
 
 # VARIANT CALLING WITH STRELKA2 (requires paired-end)
 if variantcalling == "true":
