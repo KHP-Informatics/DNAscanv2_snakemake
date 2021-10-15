@@ -146,7 +146,7 @@ rule all:
         expand(results_dir + "{sample}/{sample}_sorted.bam.bai", sample=sample_name) if (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and variantcalling == "true" and not (SV or MEI or STR or genotypeSTR or expansion)) else [],
         expand(results_dir + "{sample}/{sample}_sorted_merged.bam", sample=sample_name) if (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and (SV or MEI or STR or genotypeSTR or expansion) and not variantcalling) else [],
         expand(results_dir + "{sample}/{sample}_sorted_merged.bam", sample=sample_name) if (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and (SV or MEI or STR or genotypeSTR or expansion) and not variantcalling) else [],
-                expand(results_dir + "{sample}/{sample}_delly.bam", sample=sample_name) if format == "cram" and SV == "true" else [],
+        expand(results_dir + "{sample}/{sample}_delly.bam", sample=sample_name) if format == "cram" and SV == "true" else [],
         expand(results_dir + "{sample}/{sample}_delly.bam.bai", sample=sample_name) if format == "cram" and SV == "true" else [],
 #variantcalling
         expand (results_dir + "{sample}/{sample}_sorted.vcf.gz", sample=sample_name) if variantcalling == "true" and paired == "paired" and (BED == "true" or exome == "true") else [],
