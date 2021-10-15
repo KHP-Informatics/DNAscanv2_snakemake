@@ -149,10 +149,10 @@ rule all:
         expand(results_dir + "{sample}/{sample}_delly.bam", sample=sample_name) if format == "cram" and SV == "true" else [],
         expand(results_dir + "{sample}/{sample}_delly.bam.bai", sample=sample_name) if format == "cram" and SV == "true" else [],
 #variantcalling
-        expand (results_dir + "{sample}/{sample}_sorted.vcf.gz", sample=sample_name) if variantcalling == "true" and paired == "paired" and (BED == "true" or exome == "true") else [],
-        expand (results_dir + "{sample}/{sample}_sorted.vcf.gz.tbi", sample=sample_name) if variantcalling == "true" and paired == "paired" and (BED == "true" or exome == "true") else [],
-        expand (results_dir + "{sample}/{sample}_sorted.vcf.gz", sample=sample_name) if variantcalling == "true" and paired == "paired" and not (BED == "true" or exome == "true") else [],
-        expand (results_dir + "{sample}/{sample}_sorted.vcf.gz.tbi", sample=sample_name) if variantcalling == "true" and paired == "paired" and not (BED == "true" or exome == "true") else [],
+        expand(results_dir + "{sample}/{sample}_sorted.vcf.gz", sample=sample_name) if variantcalling == "true" and paired == "paired" and (BED == "true" or exome == "true") else [],
+        expand(results_dir + "{sample}/{sample}_sorted.vcf.gz.tbi", sample=sample_name) if variantcalling == "true" and paired == "paired" and (BED == "true" or exome == "true") else [],
+        expand(results_dir + "{sample}/{sample}_sorted.vcf.gz", sample=sample_name) if variantcalling == "true" and paired == "paired" and not (BED == "true" or exome == "true") else [],
+        expand(results_dir + "{sample}/{sample}_sorted.vcf.gz.tbi", sample=sample_name) if variantcalling == "true" and paired == "paired" and not (BED == "true" or exome == "true") else [],
 #filtering
         expand(results_dir + "{sample}/{sample}_sorted_filtered.vcf.gz", sample=sample_name) if variantcalling == "true" and filter_string == "true" else [],
         expand(results_dir + "{sample}/{sample}_sorted_filtered.vcf.gz.tbi", sample=sample_name) if variantcalling == "true" and filter_string == "true" else [],
