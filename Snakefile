@@ -112,7 +112,7 @@ if format == "sam":
 if format == "bam":
     input_files = expand(input_dir + "{sample}.bam", sample=sample_name)
     input_file = input_dir + "{sample}.bam"
-if format = "cram":
+if format == "cram":
     input_files = expand(input_dir + "{sample}.cram", sample=sample_name)
     input_file = input_dir + "{sample}.bam"
 if format == "vcf":
