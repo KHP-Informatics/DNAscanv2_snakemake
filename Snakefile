@@ -137,7 +137,7 @@ if rm_dup == "true":
 
 rule all:
     input:
-        expand(results_dir + "{sample}/custom.bed", sample=sample_name) if config ["GENE_LIST"] and not BED else [],
+        expand(results_dir + "{sample}/custom.bed", sample=sample_name) if config["GENE_LIST"] and BED == "false" else [],
         expand(results_dir + "{sample}/{sample}_sorted.bam", sample=sample_name) if format == "sam" or (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and variantcalling == "true" and not (SV or MEI or STR or genotypeSTR or expansion)) else [],
         expand(results_dir + "{sample}/{sample}_sorted.bam.bai", sample=sample_name) if format == "sam" or (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and variantcalling == "true" and not (SV or MEI or STR or genotypeSTR or expansion)) else [],
         expand(results_dir + "{sample}/{sample}_sorted.bam", sample=sample_name) if (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and variantcalling == "true" and (SV or MEI or STR or genotypeSTR or expansion)) else [],
@@ -186,7 +186,7 @@ rule all:
         expand(reports_dir + "{sample}/{sample}_sequencing_report.txt", sample=sample_name) if sequencing_report == "true" else [],
         expand(reports_dir + "{sample}/{sample}_calls_vcfstats.txt", sample=sample_name) if (calls_report and variantcalling) == "true" else [],
         expand(reports_dir + "multiqc_report.html", sample=sample_name) if (alignment_report and calls_report and sequencing_report) == "true" else [],
-        expand(reports_dir + "{sample}/{sample}_annovar_SNPindel.txt", sample=sample_name) if (results_report and annotation and variantcalling == "true") else [],
+        expand(reports_dir + "{sample}/{sample}_annovar_SNPindel.txt", sample=sample_name) if (results_report and annotation and variantcalling) == "true" else [],
         expand(reports_dir + "{sample}/{sample}_annovar_expansions.txt", sample=sample_name) if (results_report and annotation and expansion) == "true" else [],
         expand(reports_dir + "{sample}/{sample}_annovar_STR.txt", sample=sample_name) if (results_report and annotation and genotypeSTR) == "true" else [],
         expand(reports_dir + "{sample}/{sample}_SV_MEI_annotated.html", sample=sample_name) if (results_report and annotation and SV and MEI) == "true" else [],
