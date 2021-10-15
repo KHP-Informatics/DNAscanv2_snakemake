@@ -399,7 +399,7 @@ if format == "cram" and SV == "true":
             samtools view -b -h -@ {config[NUMBER_CPU]} -T {input[0]} -o {output.delly_bam} {input.input_file}
             samtools index -@ {config[NUMBER_CPU]} {output.delly_bam}
             """
-     bam_file = results_dir + "{sample}/{sample}_delly.bam"
+    bam_file = results_dir + "{sample}/{sample}_delly.bam"
 
 # VARIANT CALLING WITH STRELKA2 (requires paired-end)
 if variantcalling == "true":
