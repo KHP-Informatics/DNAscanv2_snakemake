@@ -200,6 +200,9 @@ rule all:
         expand(reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_all_ranked.txt", sample=sample_name) if alsgenescanner == "true" else []
 
 #sorting out the gene list to see if there are any unmatched genes in the reference and to make a custom bed out of that if no bed file is provided
+if BED == "true" or path_gene_list:
+    if len(path_bed) == 0 and len(path_gene_list) != 0:
+#sort this out bloody hell
 rule custombed:
     input:
         path_gene_list
