@@ -136,6 +136,84 @@ if rm_dup == "true":
         samblaster_cmq = "samblaster |"
         samblaster_bwa = "samblaster --ignoreUnmated |"
 
+rule all:
+    input:
+    #alignment
+        expand(results_dir + "{sample}/custom.bed", sample=sample_name) if config ["GENE_LIST"] and not BED else [],
+        expand(results_dir + "{sample}/{sample}_sorted.bam", sample=sample_name) if format == "sam" or (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and variantcalling == "true" and not (SV or MEI or STR or genotypeSTR or expansion)) else [],
+        expand(results_dir + "{sample}/{sample}_sorted.bam.bai", sample=sample_name) if format == "sam" or (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and variantcalling == "true" and not (SV or MEI or STR or genotypeSTR or expansion)) else [],
+        expand(results_dir + "{sample}/{sample}_sorted.bam", sample=sample_name) if (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and variantcalling == "true" and (SV or MEI or STR or genotypeSTR or expansion)) else [],
+        expand(results_dir + "{sample}/{sample}_sorted.bam.bai", sample=sample_name) if (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and variantcalling == "true" and not (SV or MEI or STR or genotypeSTR or expansion)) else [],
+        expand(results_dir + "{sample}/{sample}_sorted_merged.bam", sample=sample_name) if (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and (SV or MEI or STR or genotypeSTR or expansion) and not variantcalling) else [],
+        expand(results_dir + "{sample}/{sample}_sorted_merged.bam", sample=sample_name) if (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and (SV or MEI or STR or genotypeSTR or expansion) and not variantcalling) else [],
+                expand(results_dir + "{sample}/{sample}_delly.bam", sample=sample_name) if format == "cram" and SV == "true" else [],
+        expand(results_dir + "{sample}/{sample}_delly.bam.bai", sample=sample_name) if format == "cram" and SV == "true" else [],
+#variantcalling
+        expand (results_dir + "{sample}/{sample}_sorted.vcf.gz", sample=sample_name) if variantcalling == "true" and paired == "paired" and (BED == "true" or exome == "true") else [],
+        expand (results_dir + "{sample}/{sample}_sorted.vcf.gz.tbi", sample=sample_name) if variantcalling == "true" and paired == "paired" and (BED == "true" or exome == "true") else [],
+        expand (results_dir + "{sample}/{sample}_sorted.vcf.gz", sample=sample_name) if variantcalling == "true" and paired == "paired" and not (BED == "true" or exome == "true") else [],
+        expand (results_dir + "{sample}/{sample}_sorted.vcf.gz.tbi", sample=sample_name) if variantcalling == "true" and paired == "paired" and not (BED == "true" or exome == "true") else [],
+#filtering
+        expand(results_dir + "{sample}/{sample}_sorted_filtered.vcf.gz", sample=sample_name) if variantcalling == "true" and filter_string == "true" else [],
+        expand(results_dir + "{sample}/{sample}_sorted_filtered.vcf.gz.tbi", sample=sample_name) if variantcalling == "true" and filter_string == "true" else [],
+#expansion
+        expand(results_dir + "{sample}/{sample}_expansions.vcf.gz", sample=sample_name) if expansion == "true" else [],
+        expand(results_dir + "{sample}/{sample}_expansions.vcf.gz.tbi", sample=sample_name) if expansion == "true" else [],
+#STR
+        expand(results_dir + "{sample}/{sample}_expansiondenovo.str_profile.json", sample=sample_name) if STR == "true" else [],
+        expand(results_dir + "{sample}/{sample}_genotypeSTRinput.txt", sample=sample_name) if STR == "true" else [],
+        expand(results_dir + "{sample}/{sample}_EHDN_variant_catalog.json", sample=sample_name) if STR == "true" and genotypeSTR == "true" else [],
+        expand(results_dir + "{sample}/{sample}_EHDNexpansions.vcf.gz", sample=sample_name) if STR == "true" and genotypeSTR == "true" else [],
+        expand(results_dir + "{sample}/{sample}_EHDNexpansions.vcf.gz.tbi", sample=sample_name) if STR == "true" and genotypeSTR == "true" else [],
+#SV
+        expand(results_dir + "{sample}/{sample}_merged_SV.vcf.gz", sample=sample_name) if SV == "true" and paired == "paired" and (BED == "true" or BED == "false") else [],
+        expand(results_dir + "{sample}/{sample}_merged_SV.vcf.gz.tbi", sample=sample_name) if SV == "true" and paired == "paired" and (BED == "true" or BED == "false") else [],
+#MEI
+        expand(results_dir + "{sample}/{sample}_MEI.vcf.gz", sample=sample_name) if MEI == "true" and (exome == "true" or exome == "false") else [],
+        expand(results_dir + "{sample}/{sample}_MEI.vcf.gz.tbi", sample=sample_name) if MEI == "true" and (exome == "true" or exome == "false") else [],
+#both SV and MEI
+        expand(results_dir + "{sample}/{sample}_SV_MEI.merged.vcf.gz", sample=sample_name) if (MEI and SV) == "true" else [],
+        expand(results_dir + "{sample}/{sample}_SV_MEI.merged.vcf.gz.tbi", sample=sample_name) if (MEI and SV) == "true" else [],
+#virus,bacteria and custom microbes
+        expand(results_dir + "{sample}/unaligned_reads.fastq.gz", sample=sample_name) if (virus or bacteria or custom_microbes) == "true" else [],
+#virus
+        expand(results_dir + "{sample}/{sample}_virus_stats.txt", sample=sample_name) if virus == "true" else [],
+        expand(reports_dir + "{sample}/{sample}_virus_report.txt", sample=sample_name) if virus == "true" else [],
+#bacteria
+        expand(results_dir + "{sample}/{sample}_bacteria_stats.txt", sample=sample_name) if bacteria == "true" else [],
+        expand(reports_dir + "{sample}/{sample}_bacteria_report.txt", sample=sample_name) if bacteria == "true" else [],
+#custom_microbes
+        expand(results_dir + "{sample}/{sample}_microbes_stats.txt", sample=sample_name) if custom_microbes == "true" else [],
+        expand(reports_dir + "{sample}/{sample}_microbes_report.txt", sample=sample_name) if custom_microbes == "true" else [],
+#variantannotation
+        expand(results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz", sample=sample_name) if variantcalling == "true" and annotation == "true" else [],
+        expand(results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz.tbi", sample=sample_name) if variantcalling == "true" and annotation == "true" else [],
+        expand(results_dir + "{sample}/{sample}_expansions_annotated.vcf.gz", sample=sample_name) if expansion == "true" and annotation == "true" else [],
+        expand(results_dir + "{sample}/{sample}_expansions_annotated.vcf.gz.tbi", sample=sample_name) if expansion == "true" and annotation == "true" else [],
+        expand(results_dir + "{sample}/{sample}_STR_annotated.vcf.gz", sample=sample_name) if (STR and genotypeSTR and annotation) == "true" else [],
+        expand(results_dir + "{sample}/{sample}_STR_annotated.vcf.gz.tbi", sample=sample_name) if (STR and genotypeSTR and annotation) == "true" else [],
+        expand(results_dir + "{sample}/{sample}_SV_annotated.tsv", sample=sample_name) if (SV and annotation) == "true" and (alsgenescanner == "true" or alsgenescanner == "false") else [],
+        expand(results_dir + "{sample}/{sample}_MEI_annotated.tsv", sample=sample_name) if (MEI and annotation) == "true" and (alsgenescanner == "true" or alsgenescanner == "false") else [],
+        expand(results_dir + "{sample}/{sample}_SV_MEI_annotated.tsv", sample=sample_name) if (MEI and SV and annotation) == "true" and (alsgenescanner == "true" or alsgenescanner == "false") else [],
+#humanvariantreports
+        expand(reports_dir + "{sample}/{sample}_alignment_flagstat.txt", sample=sample_name) if alignment_report == "true" else [],
+        expand(reports_dir + "{sample}/{sample}_alignment_stats.txt", sample=sample_name) if alignment_report == "true" else [],
+        expand(reports_dir + "{sample}/{sample}_sequencing_report.txt", sample=sample_name) if sequencing_report == "true" else [],
+        expand(reports_dir + "{sample}/{sample}_calls_vcfstats.txt", sample=sample_name) if (calls_report and variantcalling) == "true" else [],
+        expand(reports_dir + "multiqc_report.html", sample=sample_name) if (alignment_report and calls_report and sequencing_report) == "true" else [],
+        expand(reports_dir + "{sample}/{sample}_annovar_SNPindel.txt", sample=sample_name) if (results_report and annotation and variantcalling == "true") else [],
+        expand(reports_dir + "{sample}/{sample}_annovar_expansions.txt", sample=sample_name) if (results_report and annotation and expansion) == "true" else [],
+        expand(reports_dir + "{sample}/{sample}_annovar_STR.txt", sample=sample_name) if (results_report and annotation and genotypeSTR) == "true" else [],
+        expand(reports_dir + "{sample}/{sample}_SV_MEI_annotated.html", sample=sample_name) if (results_report and annotation and SV and MEI) == "true" else [],
+        expand(reports_dir + "{sample}/{sample}_SV_annotated.html", sample=sample_name) if (results_report and annotation and SV) == "true" else [],
+        expand(reports_dir + "{sample}/{sample}_MEI_annotated.html", sample=sample_name) if (results_report and annotation and MEI) == "true" else [],
+        expand(reports_dir + "{sample}/{sample}_all_variants.tsv", sample=sample_name) if (results_report and annotation and variantcalling) == "true" else [],
+        expand(reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_all.txt", sample=sample_name) if alsgenescanner == "true" else [],
+        expand(reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_alsod.txt", sample=sample_name) if alsgenescanner == "true" else [],
+        expand(reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_clinvar.txt", sample=sample_name) if alsgenescanner == "true" else [],
+        expand(reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_manual_review.txt", sample=sample_name) if alsgenescanner == "true" else [],
+        expand(reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_all_ranked.txt", sample=sample_name) if alsgenescanner == "true" else []
+
 #sorting out the gene list to see if there are any unmatched genes in the reference and to make a custom bed out of that if no bed file is provided
 if BED or path_gene_list:
     if len(path_bed) == 0:
@@ -584,7 +662,7 @@ if genotypeSTR == "true":
         output:
             EHDN_variant_catalog = results_dir + "{sample}/{sample}_EHDN_variant_catalog.json",
             EHDN_expansion_file = results_dir + "{sample}/{sample}_EHDNexpansions.vcf.gz",
-            EHDN_expansion_file_index = results_dir + "{sample}/{sample}_EHDNexpansions.vcf.gz"
+            EHDN_expansion_file_index = results_dir + "{sample}/{sample}_EHDNexpansions.vcf.gz.tbi"
         conda:
             "envs/variantcalling.yaml"
         params:
@@ -609,8 +687,8 @@ if genotypeSTR == "true":
             input:
                 rules.genotypeSTR.output.EHDN_expansion_file
             output:
-                annotated_EHDN_expansion_file = results_dir + "{sample}/{sample}_EHDNexpansions_annotated.vcf.gz",
-                annotated_EHDN_expansion_file_index = results_dir + "{sample}/{sample}_EHDNexpansions_annotated.vcf.gz.tbi"
+                annotated_EHDN_expansion_file = results_dir + "{sample}/{sample}_STR_annotated.vcf.gz",
+                annotated_EHDN_expansion_file_index = results_dir + "{sample}/{sample}_STR_annotated.vcf.gz.tbi"
             conda:
                 "envs/annotation.yaml"
             params:
@@ -626,8 +704,8 @@ if genotypeSTR == "true":
             shell:
                 """
                 perl {config[ANNOVAR_DIR]}table_annovar.pl --thread {config[NUMBER_CPU]} --vcfinput {input[0]} {config[ANNOVAR_DB]} -buildver {params.ref_version} -remove -protocol {params.protocols} -operation {params.operations} -nastring . --outfile {params.out_dir}{params.sample}/annovar_EHDNexpansions.vcf
-                mv {params.out_dir}{params.sample}/annovar_EHDNexpansions.vcf.{params.ref_version}_multianno.vcf {params.out_dir}{params.sample}/{params.sample}_EHDNexpansions_annotated.vcf
-                bgzip -f {params.out_dir}{params.sample}/{params.sample}_EHDNexpansions_annotated.vcf ; tabix -fp vcf {params.out_dir}{params.sample}/{params.sample}_EHDNexpansions_annotated.vcf.gz
+                mv {params.out_dir}{params.sample}/annovar_EHDNexpansions.vcf.{params.ref_version}_multianno.vcf {params.out_dir}{params.sample}/{params.sample}_STR_annotated.vcf
+                bgzip -f {params.out_dir}{params.sample}/{params.sample}_STR_annotated.vcf ; tabix -fp vcf {output.annotated_EHDN_expansion_file}
                 """
 
 if SV == "true":
@@ -1164,6 +1242,8 @@ if (alignment_report or calls_report or sequencing_report) == "true":
             reports_dir
         conda:
             "envs/simplereports.yaml"
+        output:
+            reports_dir + "multiqc_report.html"
         log:
             log_dir + "multireport.log"
         resources:
@@ -1256,13 +1336,37 @@ if results_report == "true":
                     tabix -p vcf {output.STR_annotation_file_zipped}
                     """
 
-        if (SV or MEI) == "true":
-            if os.path.isfile("%s%s/%s_SV_MEI_merged.vcf.gz" % (results_dir, sample, sample)) == True:
-                rule SVMEIreport:
+        if SV and MEI == "true":
+            rule SVMEIreport:
+                input:
+                    rules.SVMEIannotation.output.SV_MEI_annotation_file
+                output:
+                    SV_MEI_report = reports_dir + "{sample}/{sample}_SV_MEI_annotated.html"
+                conda:
+                    "envs/SVannotation.yaml"
+                params:
+                    out_dir = reports_dir,
+                    sample = "{sample}",
+                    ref_version = annovar_ref_version
+                log:
+                    log_dir + "SVMEIreport.log"
+                resources:
+                    mem_mb = memory
+                shell:
+                    """
+                    cpan YAML::XS
+                    cpan Sort::Key::Natural
+                    export ANNOTSV={config[ANNOTSV_DIR]}
+                    perl {config[KNOTANNOTSV_DIR]}knotAnnotSV.pl --configFile {config[KNOTANNOTSV_DIR]}config_AnnotSV.yaml --annotSVfile {input[0]} --outDir {params.out_dir} --genomeBuild {params.ref_version}
+                    """
+
+        else:
+            if SV:
+                rule SVreport:
                     input:
-                        rules.SVMEIannotation.output.SV_MEI_annotation_file
+                        rules.SVannotation.output.SV_annotation_file
                     output:
-                        SV_MEI_report = reports_dir + "{sample}/{sample}_SV_MEI_annotated.html"
+                        SV_report = reports_dir + "{sample}/{sample}_SV_annotated.html"
                     conda:
                         "envs/SVannotation.yaml"
                     params:
@@ -1270,7 +1374,7 @@ if results_report == "true":
                         sample = "{sample}",
                         ref_version = annovar_ref_version
                     log:
-                        log_dir + "SVMEIreport.log"
+                        log_dir + "SVreport.log"
                     resources:
                         mem_mb = memory
                     shell:
@@ -1281,54 +1385,29 @@ if results_report == "true":
                         perl {config[KNOTANNOTSV_DIR]}knotAnnotSV.pl --configFile {config[KNOTANNOTSV_DIR]}config_AnnotSV.yaml --annotSVfile {input[0]} --outDir {params.out_dir} --genomeBuild {params.ref_version}
                         """
 
-            else:
-                if SV:
-                    rule SVreport:
-                        input:
-                            rules.SVannotation.output.SV_annotation_file
-                        output:
-                            SV_report = reports_dir + "{sample}/{sample}_SV_annotated.html"
-                        conda:
-                            "envs/SVannotation.yaml"
-                        params:
-                            out_dir = reports_dir,
-                            sample = "{sample}",
-                            ref_version = annovar_ref_version
-                        log:
-                            log_dir + "SVreport.log"
-                        resources:
-                            mem_mb = memory
-                        shell:
-                            """
-                            cpan YAML::XS
-                            cpan Sort::Key::Natural
-                            export ANNOTSV={config[ANNOTSV_DIR]}
-                            perl {config[KNOTANNOTSV_DIR]}knotAnnotSV.pl --configFile {config[KNOTANNOTSV_DIR]}config_AnnotSV.yaml --annotSVfile {input[0]} --outDir {params.out_dir} --genomeBuild {params.ref_version}
-                            """
-
-                if MEI:
-                    rule MEIreport:
-                        input:
-                            rules.MEIannotation.output.MEI_annotation_file
-                        output:
-                            MEI_report = reports_dir + "{sample}/{sample}_MEI_annotated.html"
-                        conda:
-                            "envs/MEIannotation.yaml"
-                        params:
-                            out_dir = reports_dir,
-                            sample = "{sample}",
-                            ref_version = annovar_ref_version
-                        log:
-                            log_dir + "MEIreport.log"
-                        resources:
-                            mem_mb = memory
-                        shell:
-                            """
-                            cpan YAML::XS
-                            cpan Sort::Key::Natural
-                            export ANNOTSV={config[ANNOTSV_DIR]}
-                            perl {config[KNOTANNOTSV_DIR]}knotAnnotSV.pl --configFile {config[KNOTANNOTSV_DIR]}config_AnnotSV.yaml --annotSVfile {input[0]} --outDir {params.out_dir} --genomeBuild {params.ref_version}
-                            """
+            if MEI:
+                rule MEIreport:
+                    input:
+                        rules.MEIannotation.output.MEI_annotation_file
+                    output:
+                        MEI_report = reports_dir + "{sample}/{sample}_MEI_annotated.html"
+                    conda:
+                        "envs/MEIannotation.yaml"
+                    params:
+                        out_dir = reports_dir,
+                        sample = "{sample}",
+                        ref_version = annovar_ref_version
+                    log:
+                        log_dir + "MEIreport.log"
+                    resources:
+                        mem_mb = memory
+                    shell:
+                        """
+                        cpan YAML::XS
+                        cpan Sort::Key::Natural
+                        export ANNOTSV={config[ANNOTSV_DIR]}
+                        perl {config[KNOTANNOTSV_DIR]}knotAnnotSV.pl --configFile {config[KNOTANNOTSV_DIR]}config_AnnotSV.yaml --annotSVfile {input[0]} --outDir {params.out_dir} --genomeBuild {params.ref_version}
+                        """
 
 #slap in concise report and write a script
 if (results_report and annotation and variantcalling and SV and MEI) == "true":
