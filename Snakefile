@@ -538,7 +538,7 @@ else:
                 rules.variantfilter.output.variant_results_file_unfiltered
             output:
                 annotated_variant_results_file = results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz",
-                annotated_variant_results_file = results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz.tbi",
+                annotated_variant_results_file_index = results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz.tbi",
                 annotated_variant_results_text = results_dir + "{sample}/{sample}_SNPindel_annotated.txt"
             conda:
                 "envs/annotation.yaml"
@@ -881,7 +881,7 @@ if MEI == "true":
             params:
                 out_dir = results_dir,
                 sample="{sample}",
-                melt_zipped_files,
+                zipped = melt_zipped_files,
                 transposon_list = path_melt + "transposon_reference.list",
                 removal_dir=bam_file
             log:
@@ -891,7 +891,7 @@ if MEI == "true":
             shell:
                 """
                 mkdir {params.out_dir}/{params.sample}/melt
-                ls {params[2]} | sed 's/\*//g' > {params.transposon_list}
+                ls {params.zipped} | sed 's/\*//g' > {params.transposon_list}
                 java -Xmx{config[MEM_GB]}G -jar {config[MELT_DIR]}MELT.jar Single -bamfile {input[0]} -h {input[1]} -t {params.transposon_list} -n {input[2]} -w {params.out_dir}/{params.sample}/melt -exome {config[MELT_CUSTOM_OPTIONS]}
                 cat {params.out_dir}/{params.sample}/melt/SVA.final_comp.vcf | grep '^#' > {params.out_dir}/{params.sample}/melt/{params.sample}.header.txt
                 cat {params.out_dir}/{params.sample}/melt/SVA.final_comp.vcf | grep -v '^#' > {params.out_dir}/{params.sample}/melt/{params.sample}.sva.vcf
@@ -917,7 +917,7 @@ if MEI == "true":
             params:
                 out_dir = results_dir,
                 sample="{sample}",
-                melt_zipped_files,
+                zipped = melt_zipped_files,
                 transposon_list = path_melt + "transposon_reference.list",
                 removal_dir=bam_file
             log:
@@ -927,7 +927,7 @@ if MEI == "true":
             shell:
                 """
                 mkdir {params.out_dir}/{params.sample}/melt
-                ls {params[2]} | sed 's/\*//g' > {params.transposon_list}
+                ls {params.zipped} | sed 's/\*//g' > {params.transposon_list}
                 java -Xmx{config[MEM_GB]}G -jar {config[MELT_DIR]}MELT.jar Single -bamfile {input[0]} -h {input[1]} -t {params.transposon_list} -n {input[2]} -w {params.out_dir}/{params.sample}/melt {config[MELT_CUSTOM_OPTIONS]}
                 cat {params.out_dir}/{params.sample}/melt/SVA.final_comp.vcf | grep '^#' > {params.out_dir}/{params.sample}/melt/{params.sample}.header.txt
                 cat {params.out_dir}/{params.sample}/melt/SVA.final_comp.vcf | grep -v '^#' > {params.out_dir}/{params.sample}/melt/{params.sample}.sva.vcf
