@@ -6,7 +6,6 @@ import sys
 import glob
 import gzip
 import bgzip
-#install bedtools
 
 #INPUT OPTIONS
 ##bam, cram, fastq and vcf options
