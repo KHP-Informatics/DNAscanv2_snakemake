@@ -137,7 +137,7 @@ if rm_dup == "true":
 
 rule all:
     input:
-        expand(results_dir + "{sample}/custom.bed", sample=sample_name) if len(path_gene_list) != 0 and BED == "false" else [],
+        expand(results_dir + "{sample}/custom.bed", sample=sample_name) if config["PATH_GENE_LIST"] and BED == "false" else [],
         expand(results_dir + "{sample}/{sample}_sorted.bam", sample=sample_name) if format == "sam" or (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and variantcalling == "true" and not (SV or MEI or STR or genotypeSTR or expansion)) else [],
         expand(results_dir + "{sample}/{sample}_sorted.bam.bai", sample=sample_name) if format == "sam" or (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and variantcalling == "true" and not (SV or MEI or STR or genotypeSTR or expansion)) else [],
         expand(results_dir + "{sample}/{sample}_sorted.bam", sample=sample_name) if (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and variantcalling == "true" and (SV or MEI or STR or genotypeSTR or expansion)) else [],
