@@ -244,9 +244,6 @@ else:
     rg_option_hisat2 = ""
     rg_option_bwa = ""
 
-#then do the rule all - need to think about this
-
-
 #ALIGNMENT
 if format == "fastq" and alignment == "true":
     if paired == "paired":
