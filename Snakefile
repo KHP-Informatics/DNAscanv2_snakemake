@@ -138,7 +138,6 @@ if rm_dup == "true":
 
 rule all:
     input:
-    #alignment
         expand(results_dir + "{sample}/custom.bed", sample=sample_name) if config ["GENE_LIST"] and not BED else [],
         expand(results_dir + "{sample}/{sample}_sorted.bam", sample=sample_name) if format == "sam" or (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and variantcalling == "true" and not (SV or MEI or STR or genotypeSTR or expansion)) else [],
         expand(results_dir + "{sample}/{sample}_sorted.bam.bai", sample=sample_name) if format == "sam" or (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and variantcalling == "true" and not (SV or MEI or STR or genotypeSTR or expansion)) else [],
@@ -148,44 +147,32 @@ rule all:
         expand(results_dir + "{sample}/{sample}_sorted_merged.bam", sample=sample_name) if (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and (SV or MEI or STR or genotypeSTR or expansion) and not variantcalling) else [],
         expand(results_dir + "{sample}/{sample}_delly.bam", sample=sample_name) if format == "cram" and SV == "true" else [],
         expand(results_dir + "{sample}/{sample}_delly.bam.bai", sample=sample_name) if format == "cram" and SV == "true" else [],
-#variantcalling
         expand(results_dir + "{sample}/{sample}_sorted.vcf.gz", sample=sample_name) if variantcalling == "true" and paired == "paired" and (BED == "true" or exome == "true") else [],
         expand(results_dir + "{sample}/{sample}_sorted.vcf.gz.tbi", sample=sample_name) if variantcalling == "true" and paired == "paired" and (BED == "true" or exome == "true") else [],
         expand(results_dir + "{sample}/{sample}_sorted.vcf.gz", sample=sample_name) if variantcalling == "true" and paired == "paired" and not (BED == "true" or exome == "true") else [],
         expand(results_dir + "{sample}/{sample}_sorted.vcf.gz.tbi", sample=sample_name) if variantcalling == "true" and paired == "paired" and not (BED == "true" or exome == "true") else [],
-#filtering
         expand(results_dir + "{sample}/{sample}_sorted_filtered.vcf.gz", sample=sample_name) if variantcalling == "true" and filter_string == "true" else [],
         expand(results_dir + "{sample}/{sample}_sorted_filtered.vcf.gz.tbi", sample=sample_name) if variantcalling == "true" and filter_string == "true" else [],
-#expansion
         expand(results_dir + "{sample}/{sample}_expansions.vcf.gz", sample=sample_name) if expansion == "true" else [],
         expand(results_dir + "{sample}/{sample}_expansions.vcf.gz.tbi", sample=sample_name) if expansion == "true" else [],
-#STR
         expand(results_dir + "{sample}/{sample}_expansiondenovo.str_profile.json", sample=sample_name) if STR == "true" else [],
         expand(results_dir + "{sample}/{sample}_genotypeSTRinput.txt", sample=sample_name) if STR == "true" else [],
         expand(results_dir + "{sample}/{sample}_EHDN_variant_catalog.json", sample=sample_name) if STR == "true" and genotypeSTR == "true" else [],
         expand(results_dir + "{sample}/{sample}_EHDNexpansions.vcf.gz", sample=sample_name) if STR == "true" and genotypeSTR == "true" else [],
         expand(results_dir + "{sample}/{sample}_EHDNexpansions.vcf.gz.tbi", sample=sample_name) if STR == "true" and genotypeSTR == "true" else [],
-#SV
         expand(results_dir + "{sample}/{sample}_merged_SV.vcf.gz", sample=sample_name) if SV == "true" and paired == "paired" and (BED == "true" or BED == "false") else [],
         expand(results_dir + "{sample}/{sample}_merged_SV.vcf.gz.tbi", sample=sample_name) if SV == "true" and paired == "paired" and (BED == "true" or BED == "false") else [],
-#MEI
         expand(results_dir + "{sample}/{sample}_MEI.vcf.gz", sample=sample_name) if MEI == "true" and (exome == "true" or exome == "false") else [],
         expand(results_dir + "{sample}/{sample}_MEI.vcf.gz.tbi", sample=sample_name) if MEI == "true" and (exome == "true" or exome == "false") else [],
-#both SV and MEI
         expand(results_dir + "{sample}/{sample}_SV_MEI.merged.vcf.gz", sample=sample_name) if (MEI and SV) == "true" else [],
         expand(results_dir + "{sample}/{sample}_SV_MEI.merged.vcf.gz.tbi", sample=sample_name) if (MEI and SV) == "true" else [],
-#virus,bacteria and custom microbes
         expand(results_dir + "{sample}/unaligned_reads.fastq.gz", sample=sample_name) if (virus or bacteria or custom_microbes) == "true" else [],
-#virus
         expand(results_dir + "{sample}/{sample}_virus_stats.txt", sample=sample_name) if virus == "true" else [],
         expand(reports_dir + "{sample}/{sample}_virus_report.txt", sample=sample_name) if virus == "true" else [],
-#bacteria
         expand(results_dir + "{sample}/{sample}_bacteria_stats.txt", sample=sample_name) if bacteria == "true" else [],
         expand(reports_dir + "{sample}/{sample}_bacteria_report.txt", sample=sample_name) if bacteria == "true" else [],
-#custom_microbes
         expand(results_dir + "{sample}/{sample}_microbes_stats.txt", sample=sample_name) if custom_microbes == "true" else [],
         expand(reports_dir + "{sample}/{sample}_microbes_report.txt", sample=sample_name) if custom_microbes == "true" else [],
-#variantannotation
         expand(results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz", sample=sample_name) if variantcalling == "true" and annotation == "true" else [],
         expand(results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz.tbi", sample=sample_name) if variantcalling == "true" and annotation == "true" else [],
         expand(results_dir + "{sample}/{sample}_expansions_annotated.vcf.gz", sample=sample_name) if expansion == "true" and annotation == "true" else [],
@@ -195,7 +182,6 @@ rule all:
         expand(results_dir + "{sample}/{sample}_SV_annotated.tsv", sample=sample_name) if (SV and annotation) == "true" and (alsgenescanner == "true" or alsgenescanner == "false") else [],
         expand(results_dir + "{sample}/{sample}_MEI_annotated.tsv", sample=sample_name) if (MEI and annotation) == "true" and (alsgenescanner == "true" or alsgenescanner == "false") else [],
         expand(results_dir + "{sample}/{sample}_SV_MEI_annotated.tsv", sample=sample_name) if (MEI and SV and annotation) == "true" and (alsgenescanner == "true" or alsgenescanner == "false") else [],
-#humanvariantreports
         expand(reports_dir + "{sample}/{sample}_alignment_flagstat.txt", sample=sample_name) if alignment_report == "true" else [],
         expand(reports_dir + "{sample}/{sample}_alignment_stats.txt", sample=sample_name) if alignment_report == "true" else [],
         expand(reports_dir + "{sample}/{sample}_sequencing_report.txt", sample=sample_name) if sequencing_report == "true" else [],
@@ -215,7 +201,7 @@ rule all:
         expand(reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_all_ranked.txt", sample=sample_name) if alsgenescanner == "true" else []
 
 #sorting out the gene list to see if there are any unmatched genes in the reference and to make a custom bed out of that if no bed file is provided
-if BED or path_gene_list:
+if BED == "true" or path_gene_list:
     if len(path_bed) == 0:
         if len(path_gene_list) != 0:
             rule custombed:
@@ -245,7 +231,6 @@ if BED or path_gene_list:
                     rm {output.custom_sorted} {output.custom_temp}
                     """
 
-            BED = "true"
             path_bed = results_dir + "{sample}/custom.bed"
 
 if config["USE_OWN_TEMP_DIR"] == "true":
@@ -407,8 +392,8 @@ if format == "cram" and SV == "true":
             path_reference,
             input_file = input_dir + "{sample}.cram"
         output:
-            bam_file = results_dir + "{sample}/{sample}_delly.bam"
-            bam_file = results_dir + "{sample}/{sample}_delly.bam.bai"
+            bam_file = results_dir + "{sample}/{sample}_delly.bam",
+            bam_file_index = results_dir + "{sample}/{sample}_delly.bam.bai"
         conda:
             "envs/samtools.yaml"
         log:
@@ -431,7 +416,7 @@ if variantcalling == "true":
                     path_bed,
                     path_reference
                 output:
-                    variant_results_file_unfiltered = results_dir + "{sample}/{sample}_sorted.vcf.gz"
+                    variant_results_file_unfiltered = results_dir + "{sample}/{sample}_sorted.vcf.gz",
                     variant_results_file_unfiltered_index = results_dir + "{sample}/{sample}_sorted.vcf.gz.tbi"
                 conda:
                     "envs/variantcalling.yaml"
@@ -585,7 +570,7 @@ if expansion == "true":
             bam_file,
             path_reference
         output:
-            expansion_file = results_dir + "{sample}/{sample}_expansions.vcf.gz"
+            expansion_file = results_dir + "{sample}/{sample}_expansions.vcf.gz",
             expansion_file_index = results_dir + "{sample}/{sample}_expansions.vcf.gz.tbi"
         conda:
             "envs/variantcalling.yaml"
@@ -609,7 +594,7 @@ if expansion == "true":
             input:
                 rules.expansion.output.expansion_file
             output:
-                annotated_expansion_file = results_dir + "{sample}/{sample}_expansions_annotated.vcf.gz"
+                annotated_expansion_file = results_dir + "{sample}/{sample}_expansions_annotated.vcf.gz",
                 annotated_expansion_file_index = results_dir + "{sample}/{sample}_expansions_annotated.vcf.gz.tbi"
             conda:
                 "envs/annotation.yaml"
@@ -636,7 +621,7 @@ if STR == "true":
             bam_file,
             path_reference
         output:
-            STR_profile = results_dir + "{sample}/{sample}_expansiondenovo.str_profile.json"
+            STR_profile = results_dir + "{sample}/{sample}_expansiondenovo.str_profile.json",
             genotypeSTR_input = results_dir + "{sample}/{sample}_genotypeSTRinput.txt"
         conda:
             "envs/variantcalling.yaml"
@@ -1017,7 +1002,7 @@ if SV == "true" and MEI == "true":
         conda:
             "envs/variantcalling.yaml"
         params:
-            merged_dir = results_dir + "{sample}/merging"
+            merged_dir = results_dir + "{sample}/merging",
             out_dir = results_dir,
             sample = "{sample}",
             SV_vcf = results_dir + "{sample}/merging/{sample}_merged_SV.vcf",
@@ -1136,7 +1121,7 @@ if (virus or bacteria or custom_microbes) == "true":
             input:
                 rules.extractnonhumanreads.output.unaligned_fastq,
             output:
-                bacteria_stats = results_dir + "{sample}/{sample}_bacteria_stats.txt"
+                bacteria_stats = results_dir + "{sample}/{sample}_bacteria_stats.txt",
                 bacteria_report = reports_dir + "{sample}/{sample}_bacteria_report.txt"
             conda:
                 "envs/alignmentfast.yaml"
@@ -1159,7 +1144,7 @@ if (virus or bacteria or custom_microbes) == "true":
             input:
                 rules.extractnonhumanreads.output.unaligned_fastq,
             output:
-                microbes_stats = results_dir + "{sample}/{sample}_microbes_stats.txt"
+                microbes_stats = results_dir + "{sample}/{sample}_microbes_stats.txt",
                 microbes_report = reports_dir + "{sample}/{sample}_microbes_report.txt"
             conda:
                 "envs/alignmentfast.yaml"
@@ -1261,7 +1246,7 @@ if results_report == "true":
                     rules.variantannotation.output.annotated_variant_results_file,
                     path_gene_list
                 output:
-                    SNPindel_annotation_report = reports_dir + "{sample}/{sample}_annovar_SNPindel.txt"
+                    SNPindel_annotation_report = reports_dir + "{sample}/{sample}_annovar_SNPindel.txt",
                     variant_annotation_file_zipped = results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz",
                     variant_annotation_file_zipped_index = results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz.tbi"
                 conda:
