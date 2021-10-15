@@ -137,66 +137,66 @@ if rm_dup == "true":
 
 rule all:
     input:
-        expand(results_dir + "{sample}/custom.bed", sample=sample_name) if config["PATH_GENE_LIST"] and BED == "false" else [],
-        expand(results_dir + "{sample}/{sample}_sorted.bam", sample=sample_name) if format == "sam" or (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and variantcalling == "true" and not (SV or MEI or STR or genotypeSTR or expansion)) else [],
-        expand(results_dir + "{sample}/{sample}_sorted.bam.bai", sample=sample_name) if format == "sam" or (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and variantcalling == "true" and not (SV or MEI or STR or genotypeSTR or expansion)) else [],
-        expand(results_dir + "{sample}/{sample}_sorted.bam", sample=sample_name) if (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and variantcalling == "true" and (SV or MEI or STR or genotypeSTR or expansion)) else [],
-        expand(results_dir + "{sample}/{sample}_sorted.bam.bai", sample=sample_name) if (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and variantcalling == "true" and not (SV or MEI or STR or genotypeSTR or expansion)) else [],
-        expand(results_dir + "{sample}/{sample}_sorted_merged.bam", sample=sample_name) if (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and (SV or MEI or STR or genotypeSTR or expansion) and not variantcalling) else [],
-        expand(results_dir + "{sample}/{sample}_sorted_merged.bam", sample=sample_name) if (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and (SV or MEI or STR or genotypeSTR or expansion) and not variantcalling) else [],
-        expand(results_dir + "{sample}/{sample}_delly.bam", sample=sample_name) if format == "cram" and SV == "true" else [],
-        expand(results_dir + "{sample}/{sample}_delly.bam.bai", sample=sample_name) if format == "cram" and SV == "true" else [],
-        expand(results_dir + "{sample}/{sample}_sorted.vcf.gz", sample=sample_name) if variantcalling == "true" and paired == "paired" and (BED == "true" or exome == "true") else [],
-        expand(results_dir + "{sample}/{sample}_sorted.vcf.gz.tbi", sample=sample_name) if variantcalling == "true" and paired == "paired" and (BED == "true" or exome == "true") else [],
-        expand(results_dir + "{sample}/{sample}_sorted.vcf.gz", sample=sample_name) if variantcalling == "true" and paired == "paired" and not (BED == "true" or exome == "true") else [],
-        expand(results_dir + "{sample}/{sample}_sorted.vcf.gz.tbi", sample=sample_name) if variantcalling == "true" and paired == "paired" and not (BED == "true" or exome == "true") else [],
-        expand(results_dir + "{sample}/{sample}_sorted_filtered.vcf.gz", sample=sample_name) if variantcalling == "true" and filter_string == "true" else [],
-        expand(results_dir + "{sample}/{sample}_sorted_filtered.vcf.gz.tbi", sample=sample_name) if variantcalling == "true" and filter_string == "true" else [],
-        expand(results_dir + "{sample}/{sample}_expansions.vcf.gz", sample=sample_name) if expansion == "true" else [],
-        expand(results_dir + "{sample}/{sample}_expansions.vcf.gz.tbi", sample=sample_name) if expansion == "true" else [],
-        expand(results_dir + "{sample}/{sample}_expansiondenovo.str_profile.json", sample=sample_name) if STR == "true" else [],
-        expand(results_dir + "{sample}/{sample}_genotypeSTRinput.txt", sample=sample_name) if STR == "true" else [],
-        expand(results_dir + "{sample}/{sample}_EHDN_variant_catalog.json", sample=sample_name) if STR == "true" and genotypeSTR == "true" else [],
-        expand(results_dir + "{sample}/{sample}_EHDNexpansions.vcf.gz", sample=sample_name) if STR == "true" and genotypeSTR == "true" else [],
-        expand(results_dir + "{sample}/{sample}_EHDNexpansions.vcf.gz.tbi", sample=sample_name) if STR == "true" and genotypeSTR == "true" else [],
-        expand(results_dir + "{sample}/{sample}_merged_SV.vcf.gz", sample=sample_name) if SV == "true" and paired == "paired" and (BED == "true" or BED == "false") else [],
-        expand(results_dir + "{sample}/{sample}_merged_SV.vcf.gz.tbi", sample=sample_name) if SV == "true" and paired == "paired" and (BED == "true" or BED == "false") else [],
-        expand(results_dir + "{sample}/{sample}_MEI.vcf.gz", sample=sample_name) if MEI == "true" and (exome == "true" or exome == "false") else [],
-        expand(results_dir + "{sample}/{sample}_MEI.vcf.gz.tbi", sample=sample_name) if MEI == "true" and (exome == "true" or exome == "false") else [],
-        expand(results_dir + "{sample}/{sample}_SV_MEI.merged.vcf.gz", sample=sample_name) if (MEI and SV) == "true" else [],
-        expand(results_dir + "{sample}/{sample}_SV_MEI.merged.vcf.gz.tbi", sample=sample_name) if (MEI and SV) == "true" else [],
-        expand(results_dir + "{sample}/unaligned_reads.fastq.gz", sample=sample_name) if (virus or bacteria or custom_microbes) == "true" else [],
-        expand(results_dir + "{sample}/{sample}_virus_stats.txt", sample=sample_name) if virus == "true" else [],
-        expand(reports_dir + "{sample}/{sample}_virus_report.txt", sample=sample_name) if virus == "true" else [],
-        expand(results_dir + "{sample}/{sample}_bacteria_stats.txt", sample=sample_name) if bacteria == "true" else [],
-        expand(reports_dir + "{sample}/{sample}_bacteria_report.txt", sample=sample_name) if bacteria == "true" else [],
-        expand(results_dir + "{sample}/{sample}_microbes_stats.txt", sample=sample_name) if custom_microbes == "true" else [],
-        expand(reports_dir + "{sample}/{sample}_microbes_report.txt", sample=sample_name) if custom_microbes == "true" else [],
-        expand(results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz", sample=sample_name) if variantcalling == "true" and annotation == "true" else [],
-        expand(results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz.tbi", sample=sample_name) if variantcalling == "true" and annotation == "true" else [],
-        expand(results_dir + "{sample}/{sample}_expansions_annotated.vcf.gz", sample=sample_name) if expansion == "true" and annotation == "true" else [],
-        expand(results_dir + "{sample}/{sample}_expansions_annotated.vcf.gz.tbi", sample=sample_name) if expansion == "true" and annotation == "true" else [],
-        expand(results_dir + "{sample}/{sample}_STR_annotated.vcf.gz", sample=sample_name) if (STR and genotypeSTR and annotation) == "true" else [],
-        expand(results_dir + "{sample}/{sample}_STR_annotated.vcf.gz.tbi", sample=sample_name) if (STR and genotypeSTR and annotation) == "true" else [],
-        expand(results_dir + "{sample}/{sample}_SV_annotated.tsv", sample=sample_name) if (SV and annotation) == "true" and (alsgenescanner == "true" or alsgenescanner == "false") else [],
-        expand(results_dir + "{sample}/{sample}_MEI_annotated.tsv", sample=sample_name) if (MEI and annotation) == "true" and (alsgenescanner == "true" or alsgenescanner == "false") else [],
-        expand(results_dir + "{sample}/{sample}_SV_MEI_annotated.tsv", sample=sample_name) if (MEI and SV and annotation) == "true" and (alsgenescanner == "true" or alsgenescanner == "false") else [],
-        expand(reports_dir + "{sample}/{sample}_alignment_flagstat.txt", sample=sample_name) if alignment_report == "true" else [],
-        expand(reports_dir + "{sample}/{sample}_alignment_stats.txt", sample=sample_name) if alignment_report == "true" else [],
-        expand(reports_dir + "{sample}/{sample}_sequencing_report.txt", sample=sample_name) if sequencing_report == "true" else [],
-        expand(reports_dir + "{sample}/{sample}_calls_vcfstats.txt", sample=sample_name) if (calls_report and variantcalling) == "true" else [],
-        expand(reports_dir + "multiqc_report.html", sample=sample_name) if (alignment_report and calls_report and sequencing_report) == "true" else [],
-        expand(reports_dir + "{sample}/{sample}_annovar_SNPindel.txt", sample=sample_name) if (results_report and annotation and variantcalling) == "true" else [],
-        expand(reports_dir + "{sample}/{sample}_annovar_expansions.txt", sample=sample_name) if (results_report and annotation and expansion) == "true" else [],
-        expand(reports_dir + "{sample}/{sample}_annovar_STR.txt", sample=sample_name) if (results_report and annotation and genotypeSTR) == "true" else [],
-        expand(reports_dir + "{sample}/{sample}_SV_MEI_annotated.html", sample=sample_name) if (results_report and annotation and SV and MEI) == "true" else [],
-        expand(reports_dir + "{sample}/{sample}_SV_annotated.html", sample=sample_name) if (results_report and annotation and SV) == "true" else [],
-        expand(reports_dir + "{sample}/{sample}_MEI_annotated.html", sample=sample_name) if (results_report and annotation and MEI) == "true" else [],
-        expand(reports_dir + "{sample}/{sample}_all_variants.tsv", sample=sample_name) if (results_report and annotation and variantcalling) == "true" else [],
-        expand(reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_all.txt", sample=sample_name) if alsgenescanner == "true" else [],
-        expand(reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_alsod.txt", sample=sample_name) if alsgenescanner == "true" else [],
-        expand(reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_clinvar.txt", sample=sample_name) if alsgenescanner == "true" else [],
-        expand(reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_manual_review.txt", sample=sample_name) if alsgenescanner == "true" else [],
+        expand(results_dir + "{sample}/custom.bed", sample=sample_name) if config["PATH_GENE_LIST"] and BED == "false" else [] +
+        expand(results_dir + "{sample}/{sample}_sorted.bam", sample=sample_name) if format == "sam" or (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and variantcalling == "true" and not (SV or MEI or STR or genotypeSTR or expansion)) else [] +
+        expand(results_dir + "{sample}/{sample}_sorted.bam.bai", sample=sample_name) if format == "sam" or (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and variantcalling == "true" and not (SV or MEI or STR or genotypeSTR or expansion)) else [] +
+        expand(results_dir + "{sample}/{sample}_sorted.bam", sample=sample_name) if (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and variantcalling == "true" and (SV or MEI or STR or genotypeSTR or expansion)) else [] +
+        expand(results_dir + "{sample}/{sample}_sorted.bam.bai", sample=sample_name) if (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and variantcalling == "true" and not (SV or MEI or STR or genotypeSTR or expansion)) else [] +
+        expand(results_dir + "{sample}/{sample}_sorted_merged.bam", sample=sample_name) if (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and (SV or MEI or STR or genotypeSTR or expansion) and not variantcalling) else [] +
+        expand(results_dir + "{sample}/{sample}_sorted_merged.bam", sample=sample_name) if (format == "fastq" and alignment == "true" and (paired == "paired" or paired == "single") and (SV or MEI or STR or genotypeSTR or expansion) and not variantcalling) else [] +
+        expand(results_dir + "{sample}/{sample}_delly.bam", sample=sample_name) if format == "cram" and SV == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_delly.bam.bai", sample=sample_name) if format == "cram" and SV == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_sorted.vcf.gz", sample=sample_name) if variantcalling == "true" and paired == "paired" and (BED == "true" or exome == "true") else [] +
+        expand(results_dir + "{sample}/{sample}_sorted.vcf.gz.tbi", sample=sample_name) if variantcalling == "true" and paired == "paired" and (BED == "true" or exome == "true") else [] +
+        expand(results_dir + "{sample}/{sample}_sorted.vcf.gz", sample=sample_name) if variantcalling == "true" and paired == "paired" and not (BED == "true" or exome == "true") else [] +
+        expand(results_dir + "{sample}/{sample}_sorted.vcf.gz.tbi", sample=sample_name) if variantcalling == "true" and paired == "paired" and not (BED == "true" or exome == "true") else [] +
+        expand(results_dir + "{sample}/{sample}_sorted_filtered.vcf.gz", sample=sample_name) if variantcalling == "true" and filter_string == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_sorted_filtered.vcf.gz.tbi", sample=sample_name) if variantcalling == "true" and filter_string == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_expansions.vcf.gz", sample=sample_name) if expansion == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_expansions.vcf.gz.tbi", sample=sample_name) if expansion == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_expansiondenovo.str_profile.json", sample=sample_name) if STR == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_genotypeSTRinput.txt", sample=sample_name) if STR == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_EHDN_variant_catalog.json", sample=sample_name) if STR == "true" and genotypeSTR == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_EHDNexpansions.vcf.gz", sample=sample_name) if STR == "true" and genotypeSTR == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_EHDNexpansions.vcf.gz.tbi", sample=sample_name) if STR == "true" and genotypeSTR == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_merged_SV.vcf.gz", sample=sample_name) if SV == "true" and paired == "paired" and (BED == "true" or BED == "false") else [] +
+        expand(results_dir + "{sample}/{sample}_merged_SV.vcf.gz.tbi", sample=sample_name) if SV == "true" and paired == "paired" and (BED == "true" or BED == "false") else [] +
+        expand(results_dir + "{sample}/{sample}_MEI.vcf.gz", sample=sample_name) if MEI == "true" and (exome == "true" or exome == "false") else [] +
+        expand(results_dir + "{sample}/{sample}_MEI.vcf.gz.tbi", sample=sample_name) if MEI == "true" and (exome == "true" or exome == "false") else [] +
+        expand(results_dir + "{sample}/{sample}_SV_MEI.merged.vcf.gz", sample=sample_name) if (MEI and SV) == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_SV_MEI.merged.vcf.gz.tbi", sample=sample_name) if (MEI and SV) == "true" else [] +
+        expand(results_dir + "{sample}/unaligned_reads.fastq.gz", sample=sample_name) if (virus or bacteria or custom_microbes) == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_virus_stats.txt", sample=sample_name) if virus == "true" else [] +
+        expand(reports_dir + "{sample}/{sample}_virus_report.txt", sample=sample_name) if virus == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_bacteria_stats.txt", sample=sample_name) if bacteria == "true" else [] +
+        expand(reports_dir + "{sample}/{sample}_bacteria_report.txt", sample=sample_name) if bacteria == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_microbes_stats.txt", sample=sample_name) if custom_microbes == "true" else [] +
+        expand(reports_dir + "{sample}/{sample}_microbes_report.txt", sample=sample_name) if custom_microbes == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz", sample=sample_name) if variantcalling == "true" and annotation == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz.tbi", sample=sample_name) if variantcalling == "true" and annotation == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_expansions_annotated.vcf.gz", sample=sample_name) if expansion == "true" and annotation == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_expansions_annotated.vcf.gz.tbi", sample=sample_name) if expansion == "true" and annotation == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_STR_annotated.vcf.gz", sample=sample_name) if (STR and genotypeSTR and annotation) == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_STR_annotated.vcf.gz.tbi", sample=sample_name) if (STR and genotypeSTR and annotation) == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_SV_annotated.tsv", sample=sample_name) if (SV and annotation) == "true" and (alsgenescanner == "true" or alsgenescanner == "false") else [] +
+        expand(results_dir + "{sample}/{sample}_MEI_annotated.tsv", sample=sample_name) if (MEI and annotation) == "true" and (alsgenescanner == "true" or alsgenescanner == "false") else [] +
+        expand(results_dir + "{sample}/{sample}_SV_MEI_annotated.tsv", sample=sample_name) if (MEI and SV and annotation) == "true" and (alsgenescanner == "true" or alsgenescanner == "false") else [] +
+        expand(reports_dir + "{sample}/{sample}_alignment_flagstat.txt", sample=sample_name) if alignment_report == "true" else [] +
+        expand(reports_dir + "{sample}/{sample}_alignment_stats.txt", sample=sample_name) if alignment_report == "true" else [] +
+        expand(reports_dir + "{sample}/{sample}_sequencing_report.txt", sample=sample_name) if sequencing_report == "true" else [] +
+        expand(reports_dir + "{sample}/{sample}_calls_vcfstats.txt", sample=sample_name) if (calls_report and variantcalling) == "true" else [] +
+        expand(reports_dir + "multiqc_report.html", sample=sample_name) if (alignment_report and calls_report and sequencing_report) == "true" else [] +
+        expand(reports_dir + "{sample}/{sample}_annovar_SNPindel.txt", sample=sample_name) if (results_report and annotation and variantcalling) == "true" else [] +
+        expand(reports_dir + "{sample}/{sample}_annovar_expansions.txt", sample=sample_name) if (results_report and annotation and expansion) == "true" else [] +
+        expand(reports_dir + "{sample}/{sample}_annovar_STR.txt", sample=sample_name) if (results_report and annotation and genotypeSTR) == "true" else [] +
+        expand(reports_dir + "{sample}/{sample}_SV_MEI_annotated.html", sample=sample_name) if (results_report and annotation and SV and MEI) == "true" else [] +
+        expand(reports_dir + "{sample}/{sample}_SV_annotated.html", sample=sample_name) if (results_report and annotation and SV) == "true" else [] +
+        expand(reports_dir + "{sample}/{sample}_MEI_annotated.html", sample=sample_name) if (results_report and annotation and MEI) == "true" else [] +
+        expand(reports_dir + "{sample}/{sample}_all_variants.tsv", sample=sample_name) if (results_report and annotation and variantcalling) == "true" else [] +
+        expand(reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_all.txt", sample=sample_name) if alsgenescanner == "true" else [] +
+        expand(reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_alsod.txt", sample=sample_name) if alsgenescanner == "true" else [] +
+        expand(reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_clinvar.txt", sample=sample_name) if alsgenescanner == "true" else [] +
+        expand(reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_manual_review.txt", sample=sample_name) if alsgenescanner == "true" else [] +
         expand(reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_all_ranked.txt", sample=sample_name) if alsgenescanner == "true" else []
 
 #sorting out the gene list to see if there are any unmatched genes in the reference and to make a custom bed out of that if no bed file is provided
