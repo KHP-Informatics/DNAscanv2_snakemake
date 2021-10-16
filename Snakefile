@@ -11,7 +11,6 @@ import bgzip
 ##bam, cram, fastq and vcf options
 format = config["INPUT_FORMAT"]
 sample_name = config["SAMPLE_NAMES"]
-sample = "{sample}"
 alsgenescanner = config["ALSGENESCANNER"]
 reference = config["REFERENCE_VERSION"]
 paired = config["READ_TYPE"]
