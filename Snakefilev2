@@ -26,7 +26,6 @@ rm_dup = config["REMOVE_DUPLICATES"]
 memory = config["MEM_GB"] * 1000
 
 #MAIN OUTPUT DIRECTORIES
-results_dir = config["OUT_DIR"]
 log_dir = config["OUT_DIR"] + "logs/"
 reports_dir = config["OUT_DIR"] + "reports/"
 results_dir = config["OUT_DIR"] + "results/"
@@ -91,8 +90,6 @@ if reference == "hg38" or reference == "grch38":
         os.system("zcat resources/exome_hg38.bed.gz | sed 's/chr//g' | bgzip -c > resources/exome_grch38.bed.gz")
         os.system("zcat resources/hg38_gene_db.txt.gz | sed 's/chr//g' | bgzip -c > resources/grch38_gene_db.txt.gz")
         os.system("cp resources/hg38_gene_names.txt.gz resources/grch38_gene_names.txt.gz")
-
-variant_results_file = ""
 
 if format == "vcf":
     variant_results_file = input_file
