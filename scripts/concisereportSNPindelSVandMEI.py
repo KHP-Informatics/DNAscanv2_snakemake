@@ -2,7 +2,7 @@ import os
 import sys
 
 annotsv_file = sys.argv[1]
-temp_SV_MEI_variants = sys.argv[2] - out/reports/temp_sample_SV_MEI_variants.tsv
+temp_SV_MEI_variants = sys.argv[2]
 annovar_results_report = sys.argv[3]
 temp_SNPindel_variants = sys.argv[4]
 report_header = sys.argv[5]
