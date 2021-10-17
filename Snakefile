@@ -110,11 +110,8 @@ if alsgenescanner == "true":
     annovar_operations = "g,f,f,f"
     path_gene_list = ""
     BED = "true"
-    alignment = "true"
-    variantcalling = "true"
     annotation = "true"
-    expansion = "true"
-    SV = "true"
+
 
 if rm_dup == "true":
     if exome == "true":
@@ -132,26 +129,26 @@ if RG:
     rg_option_hisat2 = " --rg-id %s --rg LB:%s --rg PL:%s --rg PU:%s --rg SM:%s" % (RG_ID, RG_LB, RG_PL, RG_PU, RG_SM)
     rg_option_bwa = " -R '@RG\\tID:%s\\tLB:%s\\tPL:%s\\tPU:%s\\tSM:%s' " % (RG_ID, RG_LB, RG_PL, RG_PU, RG_SM)
 
-rule all: #need to fix
+rule all:
     input:
         expand(results_dir + "{sample}/custom.bed", sample=sample_name) if use_gene_list == "true" and path_gene_list else [] +
-        expand(results_dir + "{sample}/{sample}_sorted_aligned.bam", sample=sample_name) if format == "fastq" and alignment == "true" else [] +
-        expand(results_dir + "{sample}/{sample}_sorted_aligned.bam.bai", sample=sample_name) if format == "fastq" and alignment == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_sorted_aligned.bam", sample=sample_name) if format == "fastq" and alignment == "true" or alsgenescanner == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_sorted_aligned.bam.bai", sample=sample_name) if format == "fastq" and alignment == "true" or alsgenescanner == "true" else [] +
         expand(results_dir + "{sample}/{sample}_sorted.bam", sample=sample_name) if format == "sam" else [] +
         expand(results_dir + "{sample}/{sample}_sorted.bam.bai", sample=sample_name) if format == "sam" else [] +
         expand(results_dir + "{sample}/{sample}_delly.bam", sample=sample_name) if format == "cram" and SV == "true" else [] +
         expand(results_dir + "{sample}/{sample}_delly.bam.bai", sample=sample_name) if format == "cram" and SV == "true" else [] +
-        expand(results_dir + "{sample}/{sample}_sorted.vcf.gz", sample=sample_name) if variantcalling == "true" and filter_string == "false" else [] +
+        expand(results_dir + "{sample}/{sample}_sorted.vcf.gz", sample=sample_name) if variantcalling == "true" and filter_string == "false" or alsgenescanner == "true" else [] +
         expand(results_dir + "{sample}/{sample}_sorted_filtered.vcf.gz", sample=sample_name) if variantcalling == "true" and filter_string == "true" else [] +
-        expand(results_dir + "{sample}/{sample}_expansions.vcf.gz", sample=sample_name) if expansion == "true" else [] +
-        expand(results_dir + "{sample}/{sample}_expansions.vcf.gz.tbi", sample=sample_name) if expansion == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_expansions.vcf.gz", sample=sample_name) if expansion == "true" or alsgenescanner == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_expansions.vcf.gz.tbi", sample=sample_name) if expansion == "true" or alsgenescanner == "true" else [] +
         expand(results_dir + "{sample}/{sample}_expansiondenovo.str_profile.json", sample=sample_name) if STR == "true" else [] +
         expand(results_dir + "{sample}/{sample}_genotypeSTRinput.txt", sample=sample_name) if STR == "true" and genotypeSTR == "true" else [] +
         expand(results_dir + "{sample}/{sample}_EHDN_variant_catalog.json", sample=sample_name) if STR == "true" and genotypeSTR == "true" else [] +
         expand(results_dir + "{sample}/{sample}_EHDNexpansions.vcf.gz", sample=sample_name) if STR == "true" and genotypeSTR == "true" else [] +
         expand(results_dir + "{sample}/{sample}_EHDNexpansions.vcf.gz.tbi", sample=sample_name) if STR == "true" and genotypeSTR == "true" else [] +
-        expand(results_dir + "{sample}/{sample}_merged_SV.vcf.gz", sample=sample_name) if SV == "true" else [] +
-        expand(results_dir + "{sample}/{sample}_merged_SV.vcf.gz.tbi", sample=sample_name) if SV == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_merged_SV.vcf.gz", sample=sample_name) if SV == "true" or alsgenescanner == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_merged_SV.vcf.gz.tbi", sample=sample_name) if SV == "true" or alsgenescanner == "true" else [] +
         expand(results_dir + "{sample}/{sample}_MEI.vcf.gz", sample=sample_name) if MEI == "true" else [] +
         expand(results_dir + "{sample}/{sample}_MEI.vcf.gz.tbi", sample=sample_name) if MEI == "true" else [] +
         expand(results_dir + "{sample}/{sample}_SV_MEI.merged.vcf.gz", sample=sample_name) if SV == "true" and MEI == "true" else [] +
@@ -163,13 +160,13 @@ rule all: #need to fix
         expand(reports_dir + "{sample}/{sample}_bacteria_report.txt", sample=sample_name) if bacteria == "true" else [] +
         expand(results_dir + "{sample}/{sample}_microbes_stats.txt", sample=sample_name) if microbes == "true" else [] +
         expand(reports_dir + "{sample}/{sample}_microbes_report.txt", sample=sample_name) if microbes == "true" else [] +
-        expand(results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz", sample=sample_name) if variantcalling == "true" and annotation == "true" else [] +
-        expand(results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz.tbi", sample=sample_name) if variantcalling == "true" and annotation == "true" else [] +
-        expand(results_dir + "{sample}/{sample}_expansions_annotated.vcf.gz", sample=sample_name) if expansion == "true" and annotation == "true" else [] +
-        expand(results_dir + "{sample}/{sample}_expansions_annotated.vcf.gz.tbi", sample=sample_name) if expansion == "true" and annotation == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz", sample=sample_name) if variantcalling == "true" and annotation == "true" or alsgenescanner == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz.tbi", sample=sample_name) if variantcalling == "true" and annotation == "true" or alsgenescanner == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_expansions_annotated.vcf.gz", sample=sample_name) if expansion == "true" and annotation == "true" or alsgenescanner == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_expansions_annotated.vcf.gz.tbi", sample=sample_name) if expansion == "true" and annotation == "true" or alsgenescanner == "true" else [] +
         expand(results_dir + "{sample}/{sample}_STR_annotated.vcf.gz", sample=sample_name) if (STR and genotypeSTR and annotation) == "true" else [] +
         expand(results_dir + "{sample}/{sample}_STR_annotated.vcf.gz.tbi", sample=sample_name) if (STR and genotypeSTR and annotation) == "true" else [] +
-        expand(results_dir + "{sample}/{sample}_SV_annotated.tsv", sample=sample_name) if SV == "true" and annotation == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_SV_annotated.tsv", sample=sample_name) if SV == "true" and annotation == "true" or alsgenescanner == "true" else [] +
         expand(results_dir + "{sample}/{sample}_MEI_annotated.tsv", sample=sample_name) if MEI == "true" and annotation == "true" else [] +
         expand(results_dir + "{sample}/{sample}_SV_MEI_annotated.tsv", sample=sample_name) if (SV and MEI and annotation) == "true" else [] +
         expand(reports_dir + "{sample}/{sample}_alignment_flagstat.txt", sample=sample_name) if alignment == "true" and alignment_report == "true" else [] +
@@ -177,13 +174,13 @@ rule all: #need to fix
         expand(reports_dir + "{sample}/{sample}_sequencing_report.txt", sample=sample_name) if format == "fastq" and sequencing_report == "true" else []+
         expand(reports_dir + "{sample}/{sample}_calls_vcfstats.txt", sample=sample_name) if variantcalling == "true" and calls_report == "true" else [] +
         expand(reports_dir + "multiqc_report.html", sample=sample_name) if (alignment_report and sequencing_report and calls_report) == "true" else [] +
-        expand(reports_dir + "{sample}/{sample}_annovar_SNPindel.txt", sample=sample_name) if (variantcalling and annotation and results_report) == "true" else [] +
-        expand(reports_dir + "{sample}/{sample}_annovar_expansions.txt", sample=sample_name) if (expansion and annotation and results_report) == "true" else [] +
+        expand(reports_dir + "{sample}/{sample}_annovar_SNPindel.txt", sample=sample_name) if (variantcalling and annotation and results_report) == "true" or alsgenescanner == "true" else [] +
+        expand(reports_dir + "{sample}/{sample}_annovar_expansions.txt", sample=sample_name) if (expansion and annotation and results_report) == "true" or alsgenescanner == "true" else [] +
         expand(reports_dir + "{sample}/{sample}_annovar_STR.txt", sample=sample_name) if (STR and genotypeSTR and annotation and results_report) == "true" else [] +
         expand(reports_dir + "{sample}/{sample}_SV_MEI_annotated.html", sample=sample_name) if (SV and MEI and annotation and results_report) == "true" else [] +
-        expand(reports_dir + "{sample}/{sample}_SV_annotated.html", sample=sample_name) if (SV and annotation and results_report) == "true" else [] +
+        expand(reports_dir + "{sample}/{sample}_SV_annotated.html", sample=sample_name) if (SV and annotation and results_report) == "true" or alsgenescanner == "true" else [] +
         expand(reports_dir + "{sample}/{sample}_MEI_annotated.html", sample=sample_name) if (MEI and annotation and results_report) == "true" else [] +
-        #expand(reports_dir + "{sample}/{sample}_all_variants.tsv", sample=sample_name) if (results_report and variantcalling and SV and (MEI or expansion or genotypeSTR)) == "true"  +
+        expand(reports_dir + "{sample}/{sample}_all_variants.tsv", sample=sample_name) if (results_report and variantcalling and SV and (MEI or expansion or genotypeSTR)) == "true" else [] +
         expand(reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_all.txt", sample=sample_name) if alsgenescanner == "true" else [] +
         expand(reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_alsod.txt", sample=sample_name) if alsgenescanner == "true" else [] +
         expand(reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_clinvar.txt", sample=sample_name) if alsgenescanner == "true" else [] +
@@ -1305,14 +1302,57 @@ rule MEIreport:
         fi
         """
 
-#rule conciseresultsreport:
-#    input:
-#
-#    output:
-#        concise_report = "results_dir + "
+rule conciseresultsreport:
+    input:
+        variantresults = rules.variantresultsreport.output.SNPindel_annotation_report,
+        expansionresults = rules.expansionresultsreport.output.expansion_annotation_report if expansion == "true" else [],
+        STRresults = rules.STRresultsreport.output.STR_annotation_report if (STR and genotypeSTR) == "true" else [],
+        SVresults = rules.SVandMEIreport.SV_MEI_report if (SV and MEI) == "true" else (rules.SVreport.output.SV_report if SV == "true" else (rules.MEIreport.output.MEI_report if MEI == "true" else []))
+    output:
+        concise_report = reports_dir + "{sample}/{sample}_all_variants.txt"
+    params:
+        annotation,
+        expansion,
+        variantcalling,
+        STR,
+        genotypeSTR,
+        SV,
+        MEI,
+        out_dir = reports_dir,
+        sample = "{sample}",
+        resultsreport = config["ANNOTATION_RESULTS_REPORT"],
+        tempSVMEI_variants = reports_dir + "{sample}/{sample}_temp_SVMEI_variants.tsv",
+        tempSNPindel_variants = reports_dir + "{sample}/{sample}_temp_SNVindel_variants.tsv",
+        tempexpansion_variants = reports_dir + "{sample}/{sample}_temp_expansion_variants.tsv",
+        tempSTR_variants = reports_dir + "{sample}/{sample}_temp_STR_variants.tsv"
+    log:
+        log_dir + "{sample}/conciseresultsreport.log"
+    resources:
+        mem_mb = memory
+    shell:
+        """
+        results_report=({params.resultsreport})
+        annotation=({params.annotation})
+        expansion=({params.expansion})
+        variantcalling=({params.variantcalling})
+        STR=({params.STR})
+        genotype=({params.genotypeSTR})
+        SV=({params.SV})
+        MEI=({params.MEI})
+        if [[ "${{results_report}}" = "true" && "${{annotation}}" = "true" && "${{variantcalling}}" = "true" && "${{SV}}" = "true" && "${{MEI}}" = "true" ]]; then
+            python scripts/concisereportSNPindelSVandMEI.py {input.SV_results} {params.tempSVMEI_variants} {input.variantresults} {params.tempSNPindel_variants} scripts/all_variants_report_header.txt {output.concise_report}
+            if [ "${{expansion}}" = "true" ] && [ "${{genotype}}" = "true" ]; then
+                python scripts/concisereportexpansionandSTR.py {input.expansionresults} {params.tempexpansion_variants} {input.STRresults} {params.tempSTR_variants} {output.concise_report}
+                need to make expansion and then add genotype onto that before adding onto snpindel
+            elif [ "${{expansion}}" = "true" ]; then
+                python scripts/concisereportexpansion.py {input.expansionresults} {params.tempexpansion_variants} {output.concise_report}
+            elif [ "${{genotype}}" = "true" ]; then
+                python scripts/concisereportSTR.py {input.STRresults} {params.tempSTR_variants} {output.concise_report}
+            fi
+        fi
+        """
 
-
-rule runAGS:
+rule AGSscoring:
     input:
         rules.variantannotation.output.annotated_variant_results_text
     output:
