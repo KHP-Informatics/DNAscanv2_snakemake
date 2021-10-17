@@ -72,11 +72,6 @@ if reference == "hg19" or reference == "grch37":
     annotsv_ref_version = "GRCh37"
     if alsgenescanner == "true":
         alsgenescanner_bed = "resources/alsgenescanner/als_gene_scanner_hg19.bed"
-    if reference == "grch37":
-        os.system("zcat resources/exome_hg19.bed.gz | sed 's/chr//g' | bgzip -c > resources/exome_grch37.bed.gz")
-        os.system("zcat resources/hg19_gene_db.txt.gz | sed 's/chr//g' | bgzip -c > resources/grch37_gene_db.txt.gz")
-        os.system("cp resources/hg19_gene_names.txt.gz resources/grch37_gene_names.txt.gz")
-
 
 if reference == "hg38" or reference == "grch38":
     path_expansionHunter_catalog = "resources/repeats/hg38_variant_catalog.json"
@@ -87,10 +82,6 @@ if reference == "hg38" or reference == "grch38":
     annotsv_ref_version = "GRCh38"
     if alsgenescanner == "true":
         alsgenescanner_bed = "resources/alsgenescanner/als_gene_scanner_hg38.bed"
-    if reference == "grch38":
-        os.system("zcat resources/exome_hg38.bed.gz | sed 's/chr//g' | bgzip -c > resources/exome_grch38.bed.gz")
-        os.system("zcat resources/hg38_gene_db.txt.gz | sed 's/chr//g' | bgzip -c > resources/grch38_gene_db.txt.gz")
-        os.system("cp resources/hg38_gene_names.txt.gz resources/grch38_gene_names.txt.gz")
 
 #ADAPTING INPUT FILE FORMATS
 if format == "fastq" and paired == "single":
