@@ -25,6 +25,7 @@ RG = config["ADD_READ_GROUP"]
 rm_dup = config["REMOVE_DUPLICATES"]
 memory = config["MEM_GB"] * 1000
 
+
 #MAIN OUTPUT DIRECTORIES
 log_dir = config["OUT_DIR"] + "logs/"
 reports_dir = config["OUT_DIR"] + "reports/"
@@ -106,12 +107,15 @@ if format == "vcf":
     expand(input_dir + "{sample}.vcf.gz", sample=sample_name)
 
 if alsgenescanner == "true":
-    annovar_protocols = "refGene,dbnsfp33a,clinvar_20210501,intervar_20180118"
-    annovar_operations = "g,f,f,f"
+    alsgene_annovar_protocols = "refGene,dbnsfp33a,clinvar_20210501,intervar_20180118"
+    alsgene_annovar_operations = "g,f,f,f"
     path_gene_list = ""
+    filter_string = "false"
     BED = "true"
     annotation = "true"
-
+    variantcalling = "true"
+    SV = "true"
+    expansion = "true"
 
 if rm_dup == "true":
     if exome == "true":
@@ -129,7 +133,7 @@ if RG:
     rg_option_hisat2 = " --rg-id %s --rg LB:%s --rg PL:%s --rg PU:%s --rg SM:%s" % (RG_ID, RG_LB, RG_PL, RG_PU, RG_SM)
     rg_option_bwa = " -R '@RG\\tID:%s\\tLB:%s\\tPL:%s\\tPU:%s\\tSM:%s' " % (RG_ID, RG_LB, RG_PL, RG_PU, RG_SM)
 
-rule all:
+rule runDNAscan:
     input:
         expand(results_dir + "{sample}/custom.bed", sample=sample_name) if use_gene_list == "true" and path_gene_list else [] +
         expand(results_dir + "{sample}/{sample}_sorted_aligned.bam", sample=sample_name) if format == "fastq" and alignment == "true" or alsgenescanner == "true" else [] +
@@ -162,6 +166,7 @@ rule all:
         expand(reports_dir + "{sample}/{sample}_microbes_report.txt", sample=sample_name) if microbes == "true" else [] +
         expand(results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz", sample=sample_name) if variantcalling == "true" and annotation == "true" or alsgenescanner == "true" else [] +
         expand(results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz.tbi", sample=sample_name) if variantcalling == "true" and annotation == "true" or alsgenescanner == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_SNPindel_annotated.txt", sample=sample_name) if (variantcalling and annotation and alsgenescanner) == "true" else [] +
         expand(results_dir + "{sample}/{sample}_expansions_annotated.vcf.gz", sample=sample_name) if expansion == "true" and annotation == "true" or alsgenescanner == "true" else [] +
         expand(results_dir + "{sample}/{sample}_expansions_annotated.vcf.gz.tbi", sample=sample_name) if expansion == "true" and annotation == "true" or alsgenescanner == "true" else [] +
         expand(results_dir + "{sample}/{sample}_STR_annotated.vcf.gz", sample=sample_name) if (STR and genotypeSTR and annotation) == "true" else [] +
@@ -441,7 +446,7 @@ rule variantcalling:
 
 rule variantannotation:
     input:
-        vcf_variant_results_file if format == "vcf" else (rules.variantcallingfiltered.output.variant_results_file_filtered if variantcalling == "true" and filter_string == "true" else (rules.variantcalling.output.variant_results_file if variantcalling == "true" and filter_string == "false" else []))
+        vcf_variant_results_file if format == "vcf" else (rules.variantcallingfiltered.output.variant_results_file_filtered if format == "fastq" and filter_string == "true" else (rules.variantcalling.output.variant_results_file if format == "fastq" and alsgenescanner == "true" or format == "fastq" and filter_string == "false" else [])),
     output:
         annotated_variant_results_file = results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz",
         annotated_variant_results_file_index = results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz.tbi",
@@ -452,8 +457,8 @@ rule variantannotation:
         out_dir = results_dir,
         sample = "{sample}",
         ref_version = annovar_ref_version,
-        operations = annovar_operations,
-        protocols = annovar_protocols,
+        operations = alsgene_annovar_operations if alsgenescanner == "true" else annovar_operations,
+        protocols = alsgene_annovar_protocols if alsgenescanner == "true" else annovar_protocols
     log:
         log_dir + "{sample}/variantannotation.log"
     resources:
@@ -473,7 +478,7 @@ rule variantannotation:
 rule expansion:
     input:
         path_reference,
-        bam_file = input_file if config["INPUT_FORMAT"] == "bam" or config["INPUT_FORMAT"] == "cram" else (rules.sam2bam.output.bam_file if config["INPUT_FORMAT"] == "sam" else (rules.alignment.output.bam_file if config["INPUT_FORMAT"] == "fastq" else [])),
+        bam_file = input_dir + "{sample}.bam" if config["INPUT_FORMAT"] == "bam" else (input_dir + "{sample}.cram" if config["INPUT_FORMAT"] == "cram" else (rules.sam2bam.output.bam_file if config["INPUT_FORMAT"] == "sam" else (rules.alignment.output.bam_file if config["INPUT_FORMAT"] == "fastq" else []))),
     output:
         expansion_file = results_dir + "{sample}/{sample}_expansions.vcf.gz",
         expansion_file_index = results_dir + "{sample}/{sample}_expansions.vcf.gz.tbi"
@@ -512,8 +517,8 @@ rule expansionannotation:
         out_dir = results_dir,
         sample = "{sample}",
         ref_version = annovar_ref_version,
-        operations = annovar_operations,
-        protocols = annovar_protocols,
+        operations = alsgene_annovar_operations if alsgenescanner == "true" else annovar_operations,
+        protocols = alsgene_annovar_protocols if alsgenescanner == "true" else annovar_protocols
     log:
         log_dir + "{sample}/expansionannotation.log"
     resources:
@@ -532,7 +537,7 @@ rule expansionannotation:
 rule STRprofile:
     input:
         path_reference,
-        bam_file = input_file if config["INPUT_FORMAT"] == "bam" or config["INPUT_FORMAT"] == "cram" else (rules.sam2bam.output.bam_file if config["INPUT_FORMAT"] == "sam" else (rules.alignment.output.bam_file if config["INPUT_FORMAT"] == "fastq" else [])),
+        bam_file = input_dir + "{sample}.bam" if config["INPUT_FORMAT"] == "bam" else (input_dir + "{sample}.cram" if config["INPUT_FORMAT"] == "cram" else (rules.sam2bam.output.bam_file if config["INPUT_FORMAT"] == "sam" else (rules.alignment.output.bam_file if config["INPUT_FORMAT"] == "fastq" else []))),
     output:
         STR_profile = results_dir + "{sample}/{sample}_expansiondenovo.str_profile.json",
         genotypeSTR_input = results_dir + "{sample}/{sample}_genotypeSTRinput.txt"
@@ -559,7 +564,7 @@ rule genotypeSTR:
     input:
         rules.STRprofile.output.genotypeSTR_input,
         path_reference,
-        bam_file = input_file if config["INPUT_FORMAT"] == "bam" or config["INPUT_FORMAT"] == "cram" else (rules.sam2bam.output.bam_file if config["INPUT_FORMAT"] == "sam" else (rules.alignment.output.bam_file if config["INPUT_FORMAT"] == "fastq" else [])),
+        bam_file = input_dir + "{sample}.bam" if config["INPUT_FORMAT"] == "bam" else (input_dir + "{sample}.cram" if config["INPUT_FORMAT"] == "cram" else (rules.sam2bam.output.bam_file if config["INPUT_FORMAT"] == "sam" else (rules.alignment.output.bam_file if config["INPUT_FORMAT"] == "fastq" else []))),
     output:
         EHDN_variant_catalog = results_dir + "{sample}/{sample}_EHDN_variant_catalog.json",
         EHDN_expansion_file = results_dir + "{sample}/{sample}_EHDNexpansions.vcf.gz",
@@ -604,8 +609,8 @@ rule STRannotation:
         out_dir = results_dir,
         sample = "{sample}",
         ref_version = annovar_ref_version,
-        protocols = annovar_protocols,
-        operations = annovar_operations
+        protocols = alsgene_annovar_protocols if alsgenescanner == "true" else annovar_protocols,
+        operations = alsgene_annovar_operations if alsgenescanner == "true" else annovar_operations
     log:
         log_dir + "{sample}/STRannotation.log"
     resources:
@@ -654,7 +659,7 @@ rule SV:
     input:
         path_reference,
         bed = rules.custombed.output.custom_bed if use_gene_list == "true" else (path_bed if BED == "true" and not use_gene_list else (alsgenescanner_bed if alsgenescanner == "true" else [])),
-        bam_file = input_file if config["INPUT_FORMAT"] == "bam" else (rules.CramToBam.output.delly_bam if config["INPUT_FORMAT"] == "cram" else (rules.sam2bam.output.bam_file if config["INPUT_FORMAT"] == "sam" else (rules.alignment.output.bam_file if config["INPUT_FORMAT"] == "fastq" else [])))
+        bam_file = input_dir + "{sample}.bam" if config["INPUT_FORMAT"] == "bam" else (rules.CramToBam.output.delly_bam if config["INPUT_FORMAT"] == "cram" else (rules.sam2bam.output.bam_file if config["INPUT_FORMAT"] == "sam" else (rules.alignment.output.bam_file if config["INPUT_FORMAT"] == "fastq" else [])))
     output:
         manta_SV = results_dir + "{sample}/{sample}_manta_SV.vcf",
         delly_SV = results_dir + "{sample}/{sample}_delly_SV.vcf",
@@ -757,7 +762,7 @@ rule MEI:
     input:
         path_reference,
         melt_bed,
-        bam_file = input_file if config["INPUT_FORMAT"] == "bam" or config["INPUT_FORMAT"] == "cram" else (rules.sam2bam.output.bam_file if config["INPUT_FORMAT"] == "sam" else (rules.alignment.output.bam_file if config["INPUT_FORMAT"] == "fastq" else []))
+        bam_file = input_dir + "{sample}.bam" if config["INPUT_FORMAT"] == "bam" else (input_dir + "{sample}.cram" if config["INPUT_FORMAT"] == "cram" else (rules.sam2bam.output.bam_file if config["INPUT_FORMAT"] == "sam" else (rules.alignment.output.bam_file if config["INPUT_FORMAT"] == "fastq" else [])))
     output:
         MEI_file = results_dir + "{sample}/{sample}_MEI.vcf.gz",
         MEI_file_index = results_dir + "{sample}/{sample}_MEI.vcf.gz.tbi"
@@ -905,7 +910,7 @@ rule SVandMEImergingandannotation:
 
 rule extractnonhumanreads:
     input:
-        bam_file = input_file if config["INPUT_FORMAT"] == "bam" or config["INPUT_FORMAT"] == "cram" else (rules.sam2bam.output.bam_file if config["INPUT_FORMAT"] == "sam" else (rules.alignment.output.bam_file if config["INPUT_FORMAT"] == "fastq" else [])),
+        bam_file = input_dir + "{sample}.bam" if config["INPUT_FORMAT"] == "bam" else (input_dir + "{sample}.cram" if config["INPUT_FORMAT"] == "cram" else (rules.sam2bam.output.bam_file if config["INPUT_FORMAT"] == "sam" else (rules.alignment.output.bam_file if config["INPUT_FORMAT"] == "fastq" else []))),
     output:
         unaligned_fastq = results_dir + "{sample}/unaligned_reads.fastq.gz"
     conda:
@@ -1009,7 +1014,7 @@ rule identifycustommaterial:
 
 rule alignmentreport:
     input:
-        bam_file = input_file if config["INPUT_FORMAT"] == "bam" or config["INPUT_FORMAT"] == "cram" else (rules.sam2bam.output.bam_file if config["INPUT_FORMAT"] == "sam" else (rules.alignment.output.bam_file if config["INPUT_FORMAT"] == "fastq" else [])),
+        bam_file = input_dir + "{sample}.bam" if config["INPUT_FORMAT"] == "bam" else (input_dir + "{sample}.cram" if config["INPUT_FORMAT"] == "cram" else (rules.sam2bam.output.bam_file if config["INPUT_FORMAT"] == "sam" else (rules.alignment.output.bam_file if config["INPUT_FORMAT"] == "fastq" else []))),
     output:
         flagstat = reports_dir + "{sample}/{sample}_alignment_flagstat.txt",
         stats = reports_dir + "{sample}/{sample}_alignment_stats.txt"
@@ -1108,7 +1113,8 @@ rule multireport:
 rule variantresultsreport:
     input:
         rules.variantannotation.output.annotated_variant_results_file,
-        path_gene_list
+        path_gene_list,
+        rules.variantannotation.output.annotated_variant_results_text if alsgenescanner == "true" else []
     output:
         SNPindel_annotation_report = reports_dir + "{sample}/{sample}_annovar_SNPindel.txt",
         variant_annotation_file_zipped = results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz",
@@ -1354,7 +1360,16 @@ rule conciseresultsreport:
 
 rule AGSscoring:
     input:
-        rules.variantannotation.output.annotated_variant_results_text
+        rules.alignment.output.bam_file,
+        rules.variantcalling.output.variant_results_file,
+        rules.variantannotation.output.annotated_variant_results_text,
+        rules.expansion.output.expansion_file,
+        rules.SV.output.merged_SV,
+        rules.expansionannotation.output.annotated_expansion_file,
+        rules.SVannotation.output.SV_annotation_file,
+        rules.variantresultsreport.output.SNPindel_annotation_report,
+        rules.expansionresultsreport.output.expansion_annotation_report,
+        rules.SVreport.output.SV_report
     output:
         alsgenescanner_all = reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_all.txt",
         alsgenescanner_alsod = reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_alsod.txt",
