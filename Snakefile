@@ -144,7 +144,7 @@ if config["MELT_CUSTOM_OPTIONS"] == "None":
 if config["ANNOTSV_CUSTOM_OPTIONS"] == "None":
     config["ANNOTSV_CUSTOM_OPTIONS"] = ""
 
-rule runDNAscan:
+rule all:
     input:
         expand(results_dir + "{sample}/custom.bed", sample=sample_name) if use_gene_list == "true" and path_gene_list else [] +
         expand(results_dir + "{sample}/{sample}_sorted_aligned.bam", sample=sample_name) if format == "fastq" and alignment == "true" or alsgenescanner == "true" else [] +
@@ -153,7 +153,7 @@ rule runDNAscan:
         expand(results_dir + "{sample}/{sample}_sorted.bam.bai", sample=sample_name) if format == "sam" else [] +
         expand(results_dir + "{sample}/{sample}_delly.bam", sample=sample_name) if format == "cram" and SV == "true" else [] +
         expand(results_dir + "{sample}/{sample}_delly.bam.bai", sample=sample_name) if format == "cram" and SV == "true" else [] +
-        expand(results_dir + "{sample}/{sample}_sorted.vcf.gz", sample=sample_name) if variantcalling == "true" and filter_string == "false" or alsgenescanner == "true" else [] +
+        expand(results_dir + "{sample}/{sample}_sorted.vcf.gz", sample=sample_name) if variantcalling == "true" and filter_string != "true" or alsgenescanner == "true" else [] +
         expand(results_dir + "{sample}/{sample}_sorted_filtered.vcf.gz", sample=sample_name) if variantcalling == "true" and filter_string == "true" else [] +
         expand(results_dir + "{sample}/{sample}_expansions.vcf.gz", sample=sample_name) if expansion == "true" or alsgenescanner == "true" else [] +
         expand(results_dir + "{sample}/{sample}_expansions.vcf.gz.tbi", sample=sample_name) if expansion == "true" or alsgenescanner == "true" else [] +
@@ -409,7 +409,7 @@ rule variantcalling:
     input:
         path_reference,
         bed = rules.custombed.output.custom_bed if use_gene_list == "true" else (path_bed if BED == "true" and not use_gene_list else (alsgenescanner_bed if alsgenescanner == "true" else [])),
-        bam_file = input_dir + "{sample}.bam" if config["INPUT_FORMAT"] == "bam" else (input_dir + "{sample}.cram" if config["INPUT_FORMAT"] == "cram" else (rules.sam2bam.output.bam_file if config["INPUT_FORMAT"] == "sam" else (rules.alignment.output.bam_file if config["INPUT_FORMAT"] == "fastq" else [])))
+        bam_file = rules.alignment.output.bam_file if config["INPUT_FORMAT"] == "fastq" else (input_dir + "{sample}.bam" if config["INPUT_FORMAT"] == "bam" else (input_dir + "{sample}.cram" if config["INPUT_FORMAT"] == "cram" else (rules.sam2bam.output.bam_file if config["INPUT_FORMAT"] == "sam" else [])))
     output:
         variant_results_file = results_dir + "{sample}/{sample}_sorted.vcf.gz"
     log:
@@ -435,7 +435,7 @@ rule variantcalling:
         paired="{params[2]}"
         bed="{params[3]}"
         filter_string="{params[4]}"
-        if [[ "$variantcalling" == "True" ]] && [[ "$filter_string" == "False" ]]; then
+        if [[ "$variantcalling" == "True" ]] && [[ "$filter_string" != "True" ]]; then
             {config[STRELKA_DIR]}bin/configureStrelkaGermlineWorkflow.py --bam {input.bam_file} --referenceFasta {input[0]} --runDir {params.out_dir}/{params.sample}/strelka
             {params.out_dir}{params.sample}/strelka/runWorkflow.py -j {config[NUMBER_CPU]} -m local
             mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz {output.variant_results_file}
@@ -463,7 +463,8 @@ rule variantcalling:
 
 rule variantannotation:
     input:
-        variant_file = rules.variantcalling.output.variant_results_file if (format == "fastq" and alsgenescanner == "true") or (config["INPUT_FORMAT"] == "fastq" and filter_string == "false") else (rules.variantcallingfiltered.output.variant_results_file_filtered if filter_string == "true" else []),
+        out_dir = results_dir,
+        variant_file = rules.variantcalling.output.variant_results_file if alsgenescanner == "true" or filter_string != "true" else (rules.variantcallingfiltered.output.variant_results_file_filtered if filter_string == "true" else []),
     output:
         annotated_variant_results_file = results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz",
         annotated_variant_results_file_index = results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz.tbi",
@@ -471,9 +472,8 @@ rule variantannotation:
     params:
         annotation,
         variantcalling,
-        out_dir = results_dir,
-        sample = "{sample}",
         ref_version = annovar_ref_version,
+        sample = "{sample}",
         operations = alsgene_annovar_operations if alsgenescanner == "true" else annovar_operations,
         protocols = alsgene_annovar_protocols if alsgenescanner == "true" else annovar_protocols
     log:
@@ -485,10 +485,10 @@ rule variantannotation:
         variantcalling="{params[1]}"
         annotation="{params[0]}"
         if [[ "$variantcalling" == "True" ]] && and [[ "$annotation" == "True" ]]; then
-            perl {config[ANNOVAR_DIR]}table_annovar.pl --thread {config[NUMBER_CPU]} --vcfinput {input.variant_file} {config[ANNOVAR_DB]} -buildver {params.ref_version} -remove -protocol {params.protocols} -operation {params.operations} -nastring . --outfile {params.out_dir}{params.sample}/{params.sample}_annovar_SNPindel.vcf
-            mv {params.out_dir}{params.sample}/{params.sample}_annovar_SNPindel.vcf.{params.ref_version}_multianno.vcf {params.out_dir}{params.sample}/{params.sample}_SNPindel_annotated.vcf
-            mv {params.out_dir}{params.sample}/annovar_SNPindel.vcf.{params.ref_version}_multianno.txt {output.annotated_variant_results_text}
-            bgzip -f {params.out_dir}{params.sample}/{params.sample}_SNPindel_annotated.vcf ; tabix -fp vcf {params.out_dir}{params.sample}/{params.sample}_SNPindel_annotated.vcf.gz
+            perl {config[ANNOVAR_DIR]}table_annovar.pl --thread {config[NUMBER_CPU]} --vcfinput {input.variant_file} {config[ANNOVAR_DB]} -buildver {params.ref_version} -remove -protocol {params.protocols} -operation {params.operations} -nastring . --outfile {input.out_dir}{params.sample}/{params.sample}_annovar_SNPindel.vcf
+            mv {input.out_dir}{params.sample}/{params.sample}_annovar_SNPindel.vcf.{params.ref_version}_multianno.vcf {input.out_dir}{params.sample}/{params.sample}_SNPindel_annotated.vcf
+            mv {input.out_dir}{params.sample}/annovar_SNPindel.vcf.{params.ref_version}_multianno.txt {output.annotated_variant_results_text}
+            bgzip -f {input.out_dir}{params.sample}/{params.sample}_SNPindel_annotated.vcf ; tabix -fp vcf {input.out_dir}{params.sample}/{params.sample}_SNPindel_annotated.vcf.gz
         fi
         """
 
@@ -1081,7 +1081,7 @@ rule sequencingreport:
 
 rule callsreport:
     input:
-        variant_file = rules.variantcallingfiltered.output.variant_results_file_filtered if variantcalling == "true" and filter_string == "true" else (rules.variantcalling.output.variant_results_file if variantcalling == "true" and filter_string == "false" else [])
+        variant_file = rules.variantcallingfiltered.output.variant_results_file_filtered if variantcalling == "true" and filter_string == "true" else (rules.variantcalling.output.variant_results_file if variantcalling == "true" and filter_string != "true" else [])
     output:
         vcfstats = reports_dir + "{sample}/{sample}_calls_vcfstats.txt"
     conda:
