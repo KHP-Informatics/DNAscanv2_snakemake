@@ -236,7 +236,7 @@ rule custombed:
             bedtools sort -i {output.custom_temp} > {output.custom_sorted}
             bedtools merge -i {output.custom_sorted} > {output.custom_bed}
             if [[ "$debug" != "True" ]]; then
-            rm {output.custom_sorted} {output.custom_temp}
+                rm {output.custom_sorted} {output.custom_temp}
             fi
         fi
         """
@@ -310,7 +310,7 @@ rule alignment:
                         samtools merge -c -@ {config[NUMBER_CPU]} -f -h {params.header} {output.bam_file} {params.hisat2_bam} {params.bwa_bam}
                         samtools index -@ {config[NUMBER_CPU]} {output.bam_file}
                         if [[ "$debug" != "True" ]]; then
-                        rm {params.unaligned_reads} {params.header} {params.hisat2_bam} {params.bwa_bam} {params.out_dir}{params.sample}/{params.sample}_hisat2.bam.bai {params.out_dir}{params.sample}/{params.sample}_bwa.bam.bai
+                            rm {params.unaligned_reads} {params.header} {params.hisat2_bam} {params.bwa_bam} {params.out_dir}{params.sample}/{params.sample}_hisat2.bam.bai {params.out_dir}{params.sample}/{params.sample}_bwa.bam.bai
                         fi
                     else
                         hisat2 {config[HISAT_CUSTOM_OPTIONS]} {params.rg_hisat2} --no-softclip --no-spliced-alignment -p {config[NUMBER_CPU]} -x {config[HISAT2_INDEX]} -1 {input.fastq1} -2 {input.fastq2} | {params.samblaster} samtools view -@ {config[NUMBER_CPU]} -Sb - | sambamba sort -t {config[NUMBER_CPU]} --tmpdir={params.tmp} -o {params.hisat2_bam} /dev/stdin
@@ -322,7 +322,7 @@ rule alignment:
                         samtools merge -c -@ {config[NUMBER_CPU]} -f -h {params.header} {output.bam_file} {params.hisat2_bam} {params.bwa_bam}
                         samtools index -@ {config[NUMBER_CPU]} {output.bam_file}
                         if [[ "$debug" != "True" ]]; then
-                        rm {params.unaligned_reads} {params.header} {params.hisat2_bam} {params.bwa_bam} {params.out_dir}{params.sample}/{params.sample}_hisat2.bam.bai {params.out_dir}{params.sample}/{params.sample}_bwa.bam.bai
+                            rm {params.unaligned_reads} {params.header} {params.hisat2_bam} {params.bwa_bam} {params.out_dir}{params.sample}/{params.sample}_hisat2.bam.bai {params.out_dir}{params.sample}/{params.sample}_bwa.bam.bai
                         fi
                     fi
                 fi
@@ -411,19 +411,19 @@ rule variantcallingfiltered:
                     if [[ "$debug" != "True" ]]; then
                         rm -r {params.out_dir}{params.sample}/strelka
                     fi
+                fi
 
-                    if [[ "$bed" == "True" ]]; then
-                        bgzip -c {input.bed} > {params.temp_bed}
-                        sortBed -i {params.temp_bed} | bgzip -c > {params.sorted_bed}
-                        tabix -p bed {params.sorted_bed}
-                        {config[STRELKA_DIR]}bin/configureStrelkaGermlineWorkflow.py --bam {input.bam_file} --referenceFasta {input[0]} --runDir {params.out_dir}/{params.sample}/strelka --callRegions {params.sorted_bed}
-                        {params.out_dir}{params.sample}/strelka/runWorkflow.py -j {config[NUMBER_CPU]} -m local
-                        mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz {params.temp_results_filtered}
-                        mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz.tbi {params.temp_results_filtered_index}
-                        bcftools filter -i '{config[VARIANT_FILTER_STRING]}' {params.temp_results_filtered} | bgzip -c > {output.variant_results_file_filtered} ; tabix -fp vcf {output.variant_results_file_filtered}
-                        if [[ "$debug" != "True" ]]; then
-                            rm -r {params.out_dir}{params.sample}/strelka
-                        fi
+                if [[ "$bed" == "True" ]]; then
+                    bgzip -c {input.bed} > {params.temp_bed}
+                    sortBed -i {params.temp_bed} | bgzip -c > {params.sorted_bed}
+                    tabix -p bed {params.sorted_bed}
+                    {config[STRELKA_DIR]}bin/configureStrelkaGermlineWorkflow.py --bam {input.bam_file} --referenceFasta {input[0]} --runDir {params.out_dir}/{params.sample}/strelka --callRegions {params.sorted_bed}
+                    {params.out_dir}{params.sample}/strelka/runWorkflow.py -j {config[NUMBER_CPU]} -m local
+                    mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz {params.temp_results_filtered}
+                    mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz.tbi {params.temp_results_filtered_index}
+                    bcftools filter -i '{config[VARIANT_FILTER_STRING]}' {params.temp_results_filtered} | bgzip -c > {output.variant_results_file_filtered} ; tabix -fp vcf {output.variant_results_file_filtered}
+                    if [[ "$debug" != "True" ]]; then
+                        rm -r {params.out_dir}{params.sample}/strelka
                     fi
                 fi
             fi
@@ -481,18 +481,17 @@ rule variantcalling:
                 if [[ "$debug" != "True" ]]; then
                     rm -r {params.out_dir}{params.sample}/strelka
                 fi
-
-                if [[ "$bed" == "True" ]]; then
-                    bgzip -c {input.bed} > {params.temp_bed}
-                    sortBed -i {params.temp_bed} | bgzip -c > {params.sorted_bed}
-                    tabix -p bed {params.sorted_bed}
-                    {config[STRELKA_DIR]}bin/configureStrelkaGermlineWorkflow.py --bam {input.bam_file} --referenceFasta {input[0]} --runDir {params.out_dir}/{params.sample}/strelka --callRegions {params.sorted_bed}
-                    {params.out_dir}{params.sample}/strelka/runWorkflow.py -j {config[NUMBER_CPU]} -m local
-                    mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz {output.variant_results_file}
-                    mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz.tbi {output.variant_results_file_index}
-                    if [[ "$debug" != "True" ]]; then
-                        rm -r {params.out_dir}{params.sample}/strelka
-                    fi
+            fi
+            if [[ "$bed" == "True" ]]; then
+                bgzip -c {input.bed} > {params.temp_bed}
+                sortBed -i {params.temp_bed} | bgzip -c > {params.sorted_bed}
+                tabix -p bed {params.sorted_bed}
+                {config[STRELKA_DIR]}bin/configureStrelkaGermlineWorkflow.py --bam {input.bam_file} --referenceFasta {input[0]} --runDir {params.out_dir}/{params.sample}/strelka --callRegions {params.sorted_bed}
+                {params.out_dir}{params.sample}/strelka/runWorkflow.py -j {config[NUMBER_CPU]} -m local
+                mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz {output.variant_results_file}
+                mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz.tbi {output.variant_results_file_index}
+                if [[ "$debug" != "True" ]]; then
+                    rm -r {params.out_dir}{params.sample}/strelka
                 fi
             fi
         fi
@@ -753,8 +752,6 @@ rule SV:
         bed = rules.custombed.output.custom_bed if use_gene_list == "true" else (path_bed if BED == "true" and not use_gene_list else (alsgenescanner_bed if alsgenescanner == "true" else [])),
         bam_file = input_dir + "{sample}.bam" if config["INPUT_FORMAT"] == "bam" else (rules.CramToBam.output.delly_bam if config["INPUT_FORMAT"] == "cram" else (rules.sam2bam.output.bam_file if config["INPUT_FORMAT"] == "sam" else (rules.alignment.output.bam_file if config["INPUT_FORMAT"] == "fastq" else [])))
     output:
-        manta_SV = results_dir + "{sample}/{sample}_SV_manta.vcf",
-        delly_SV = results_dir + "{sample}/{sample}_delly_SV.vcf",
         merged_SV = results_dir + "{sample}/{sample}_merged_SV.vcf.gz",
         merged_SV_index = results_dir + "{sample}/{sample}_merged_SV.vcf.gz.tbi"
     conda:
@@ -769,6 +766,8 @@ rule SV:
         out_dir = results_dir,
         sample = "{sample}",
         delly_exclude_regions = path_delly_exclude_regions,
+        manta_SV = results_dir + "{sample}/{sample}_SV_manta.vcf",
+        delly_SV = results_dir + "{sample}/{sample}_delly_SV.vcf"
     log:
         log_dir + "{sample}/SV.log"
     threads: config["NUMBER_CPU"]
@@ -791,13 +790,13 @@ rule SV:
                 gzip -d {params.out_dir}{params.sample}/{params.sample}_SV_manta.vcf.gz
                 rm -r {params.out_dir}{params.sample}/SV_manta
                 delly call -g {input[0]} -o {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf -x {params.delly_exclude_regions} {input.bam_file}
-                bcftools view {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf > {output.delly_SV}
+                bcftools view {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf > {params.delly_SV}
                 ls {params.out_dir}{params.sample}/*SV.vcf > {params.out_dir}{params.sample}/survivor_sample_files
                 SURVIVOR merge {params.out_dir}{params.sample}/survivor_sample_files 1000 1 1 1 0 30 {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf
                 perl scripts/vcf-sort.pl {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf | bgzip -c > {output.merged_SV}
                 tabix -p vcf {output.merged_SV}
                 if [[ "$debug" != "True" ]]; then
-                    rm {params.out_dir}{params.sample}/survivor_sample_files {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf.csi {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf {params.out_dir}{params.sample}/{params.sample}_delly_SV.vcf {params.out_dir}{params.sample}/{params.sample}_SV_manta.vcf
+                    rm {params.out_dir}{params.sample}/survivor_sample_files {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf.csi {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf {params.delly_SV} {params.manta_SV}
                 fi
             else
                 {config[MANTA_DIR]}bin/configManta.py --bam {input.bam_file} --referenceFasta {input[0]} --runDir {params.out_dir}{params.sample}/SV_manta
@@ -806,13 +805,13 @@ rule SV:
                 gzip -d {params.out_dir}{params.sample}/{params.sample}_SV_manta.vcf.gz
                 rm -r {params.out_dir}{params.sample}/SV_manta
                 delly call -g {input[0]} -o {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf -x {params.delly_exclude_regions} {input.bam_file}
-                bcftools view {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf > {output.delly_SV}
+                bcftools view {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf > {params.delly_SV}
                 ls {params.out_dir}{params.sample}/*SV.vcf > {params.out_dir}{params.sample}/survivor_sample_files
                 SURVIVOR merge {params.out_dir}{params.sample}/survivor_sample_files 1000 1 1 1 0 30 {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf
                 perl scripts/vcf-sort.pl {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf | bgzip -c > {output.merged_SV}
                 tabix -p vcf {output.merged_SV}
                 if [[ "$debug" != "True" ]]; then
-                    rm {params.out_dir}{params.sample}/survivor_sample_files {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf.csi {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf {params.out_dir}{params.sample}/{params.sample}_delly_SV.vcf {params.out_dir}{params.sample}/{params.sample}_SV_manta.vcf
+                    rm {params.out_dir}{params.sample}/survivor_sample_files {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf.csi {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf {params.delly_SV} {params.manta_SV}
                 fi
             fi
         fi
@@ -875,7 +874,7 @@ rule MEI:
         sample="{sample}",
         zipped = melt_zipped_files,
         transposon_list = path_melt + "transposon_reference.list",
-        removal_dir=input_dir + "{sample}.bam" if config["INPUT_FORMAT"] == "bam" or config["INPUT_FORMAT"] == "cram" else (rules.sam2bam.output.bam_file if config["INPUT_FORMAT"] == "sam" else (rules.alignment.output.bam_file if config["INPUT_FORMAT"] == "fastq" else []))
+        removal_dir=input_dir + "{sample}.bam" if config["INPUT_FORMAT"] == "bam" else (input_dir + "{sample}.cram" if config["INPUT_FORMAT"] == "cram" else (rules.sam2bam.output.bam_file if config["INPUT_FORMAT"] == "sam" else (rules.alignment.output.bam_file if config["INPUT_FORMAT"] == "fastq" else [])))
     log:
         log_dir + "{sample}/MEI.log"
     threads: config["NUMBER_CPU"]
@@ -1474,7 +1473,6 @@ rule conciseresultsreport:
             python scripts/concisereportSNPindelSVandMEI.py {input.SV_results} {params.tempSVMEI_variants} {input.variantresults} {params.tempSNPindel_variants} scripts/all_variants_report_header.txt {output.concise_report}
             if [[ "$expansion" == "True" ]] && [[ "$genotype" = "True" ]]; then
                 python scripts/concisereportexpansionandSTR.py {input.expansionresults} {params.tempexpansion_variants} {input.STRresults} {params.tempSTR_variants} {output.concise_report}
-                need to make expansion and then add genotype onto that before adding onto snpindel
             elif [[ "$expansion" == "True" ]]; then
                 python scripts/concisereportexpansion.py {input.expansionresults} {params.tempexpansion_variants} {output.concise_report}
             elif [[ "$genotype" == "True" ]]; then
