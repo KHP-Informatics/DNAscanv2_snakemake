@@ -224,9 +224,9 @@ rule custombed:
         mem_mb = memory
     shell:
         """
-        gene_list=({input.path_gene_list})
-        use_list=({params[0]})
-        if [ "${{gene_list}}" ] && [ "${{use_list}}" = true ]; then
+        gene_list="{input.path_gene_list}"
+        use_list="{params[0]}"
+        if [[ "$gene_list" ]] && [[ "$use_list" == "True" ]]; then
             zgrep -iwf {input[0]} resources/{config[REFERENCE_VERSION]}_gene_names.txt.gz | awk '{{print $2}}' > {output.matched_genes}
             zgrep -viwf {output.matched_genes} {input[0]} > {output.unmatched_genes}
             zgrep -iwf {input[0]} resources/{config[REFERENCE_VERSION]}_gene_names.txt.gz | awk '{{print $1}}' > {output.matched_genes_codes}
@@ -335,9 +335,9 @@ rule sam2bam:
         mem_mb = memory
     shell:
         """
-        format=({params[0]})
-        if ["${{format}}" = "sam"]; then
-            samtools view -Sb {input[0]} > {output.bam_file}
+        format="{params[0]}"
+        if [[ "$format" == "sam" ]]; then
+            samtools view -Sb {input.input_file} > {output.bam_file}
             samtools index -@ {config[NUMBER_CPU]} {output.bam_file}
         fi
         """
@@ -369,13 +369,13 @@ rule variantcallingfiltered:
         temp_results_filtered_index = results_dir + "{sample}/{sample}_sorted_unfiltered.vcf.gz.tbi"
     shell:
         """
-        variantcalling=({params[0]})
-        exome=({params[1]})
-        paired=({params[2]})
-        bed=({params[3]})
-        filter_string=({params[4]})
-        if [ "${{variantcalling}}" = "true" ] && [ "${{paired}}" = "paired" ]; then
-            if [ "${{filter_string}}" = "true" ]; then
+        variantcalling="{params[0]}"
+        exome="{params[1]}"
+        paired="{params[2]}"
+        bed="{params[3]}"
+        filter_string="{params[4]}"
+        if [[ "$variantcalling" == "True" ]] && [[ "$paired" == "paired" ]]; then
+            if [[ "$filter_string" == "True" ]]; then
                 {config[STRELKA_DIR]}bin/configureStrelkaGermlineWorkflow.py --bam {input.bam_file} --referenceFasta {input[0]} --runDir {params.out_dir}/{params.sample}/strelka
                 {params.out_dir}{params.sample}/strelka/runWorkflow.py -j {config[NUMBER_CPU]} -m local
                 mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz {params.temp_results_filtered}
@@ -383,14 +383,14 @@ rule variantcallingfiltered:
                 rm -r {params.out_dir}{params.sample}/strelka
                 bcftools filter -i '{config[VARIANT_FILTER_STRING]}' {params.temp_results_filtered} | bgzip -c > {output.variant_results_file} ; tabix -fp vcf {output.variant_results_file}
 
-                if [ "${{exome}}" = "true" ]; then
+                if [[ "$exome" == "True" ]]; then
                     {config[STRELKA_DIR]}bin/configureStrelkaGermlineWorkflow.py --bam {input.bam_file} --referenceFasta {input[0]} --runDir {params.out_dir}/{params.sample}/strelka --exome
                     {params.out_dir}{params.sample}/strelka/runWorkflow.py -j {config[NUMBER_CPU]} -m local
                     mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz {params.temp_results_filtered}
                     mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz.tbi {params.temp_results_filtered_index}
                     bcftools filter -i '{config[VARIANT_FILTER_STRING]}' {params.temp_results_filtered} | bgzip -c > {output.variant_results_file} ; tabix -fp vcf {output.variant_results_file}
 
-                    if [ "${{bed}}" = "true" ]; then
+                    if [[ "$bed" == "True" ]]; then
                         bgzip -c {input.bed} > {params.temp_bed}
                         sortBed -i {params.temp_bed} | bgzip -c > {params.sorted_bed}
                         tabix -p bed {params.sorted_bed}
@@ -430,25 +430,25 @@ rule variantcalling:
         sorted_bed = results_dir + "{sample}/sorted.bed.gz"
     shell:
         """
-        variantcalling=({params[0]})
-        exome=({params[1]})
-        paired=({params[2]})
-        bed=({params[3]})
-        filter_string=({params[4]})
-        if [ "${{variantcalling}}" = "true" ] && [ "${{filter_string}}" = "false" ]; then
+        variantcalling="{params[0]}"
+        exome="{params[1]}"
+        paired="{params[2]}"
+        bed="{params[3]}"
+        filter_string="{params[4]}"
+        if [[ "$variantcalling" == "True" ]] && [[ "$filter_string" == "False" ]]; then
             {config[STRELKA_DIR]}bin/configureStrelkaGermlineWorkflow.py --bam {input.bam_file} --referenceFasta {input[0]} --runDir {params.out_dir}/{params.sample}/strelka
             {params.out_dir}{params.sample}/strelka/runWorkflow.py -j {config[NUMBER_CPU]} -m local
             mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz {output.variant_results_file}
             mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz.tbi {output.variant_results_file_index}
             rm -r {params.out_dir}{params.sample}/strelka
 
-            if [ "${{exome}}" = "true" ]; then
+            if [[ "$exome" == "True" ]]; then
                 {config[STRELKA_DIR]}bin/configureStrelkaGermlineWorkflow.py --bam {input.bam_file} --referenceFasta {input[0]} --runDir {params.out_dir}/{params.sample}/strelka --exome
                 {params.out_dir}{params.sample}/strelka/runWorkflow.py -j {config[NUMBER_CPU]} -m local
                 mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz {output.variant_results_file}
                 mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz.tbi {output.variant_results_file_index}
 
-                if [ "${{bed}}" = "true" ]; then
+                if [[ "$bed" == "True" ]]; then
                     bgzip -c {input.bed} > {params.temp_bed}
                     sortBed -i {params.temp_bed} | bgzip -c > {params.sorted_bed}
                     tabix -p bed {params.sorted_bed}
@@ -482,9 +482,9 @@ rule variantannotation:
         mem_mb = memory
     shell:
         """
-        variantcalling=({params[1]})
-        annotation=({params[0]})
-        if [ "${{variantcalling}}" = "true" ] && and [ "${{annotation}}" = "true"]; then
+        variantcalling="{params[1]}"
+        annotation="{params[0]}"
+        if [[ "$variantcalling" == "True" ]] && and [[ "$annotation" == "True" ]]; then
             perl {config[ANNOVAR_DIR]}table_annovar.pl --thread {config[NUMBER_CPU]} --vcfinput {input.variant_file} {config[ANNOVAR_DB]} -buildver {params.ref_version} -remove -protocol {params.protocols} -operation {params.operations} -nastring . --outfile {params.out_dir}{params.sample}/{params.sample}_annovar_SNPindel.vcf
             mv {params.out_dir}{params.sample}/{params.sample}_annovar_SNPindel.vcf.{params.ref_version}_multianno.vcf {params.out_dir}{params.sample}/{params.sample}_SNPindel_annotated.vcf
             mv {params.out_dir}{params.sample}/annovar_SNPindel.vcf.{params.ref_version}_multianno.txt {output.annotated_variant_results_text}
@@ -512,8 +512,8 @@ rule expansion:
         mem_mb = memory
     shell:
         """
-        expansion=({params[0]})
-        if [ "${{expansion}} = "true"]; then
+        expansion="{params[0]}"
+        if [[ "$expansion" == "True" ]]; then
             ExpansionHunter --reads {input.bam_file} --reference {input[0]} --variant-catalog {params.variant_catalog} --output-prefix {params.out_dir}{params.sample}_expansions
             bgzip {params.out_dir}{params.sample}_expansions.vcf
             tabix -p vcf {output.expansion_file}
@@ -542,9 +542,9 @@ rule expansionannotation:
         mem_mb = memory
     shell:
         """
-        expansion=({params[0]})
-        annotation=({params[1]})
-        if [ "${{expansion}}" = "true" ] && [ "${{annotation}}" = "true"]; then
+        expansion="{params[0]}"
+        annotation="{params[1]}"
+        if [[ "$expansion" == "True" ]] && [[ "$annotation" == "True" ]]; then
             perl {config[ANNOVAR_DIR]}table_annovar.pl --thread {config[NUMBER_CPU]} --vcfinput {input[0]} {config[ANNOVAR_DB]} -buildver {params.ref_version} -remove -protocol {params.protocols} -operation {params.operations} -nastring . --outfile {params.out_dir}{params.sample}/annovar_expansions.vcf
             mv {params.out_dir}{params.sample}/annovar_expansions.vcf.{params.ref_version}_multianno.vcf {params.out_dir}{params.sample}/{params.sample}_expansions_annotated.vcf
             bgzip -f {params.out_dir}{params.sample}/{params.sample}_expansions_annotated.vcf ; tabix -fp vcf {params.out_dir}{params.sample}/{params.sample}_expansions_annotated.vcf.gz
@@ -570,8 +570,8 @@ rule STRprofile:
         mem_mb = memory
     shell:
         """
-        STR=({params[0]})
-        if [ "${{STR}}" = "true" ]; then
+        STR="{params[0]}"
+        if [[ "$STR" == "True" ]]; then
             {config[EXPANSIONHUNTERDENOVO_DIR]}bin/ExpansionHunterDenovo profile --reads {input.bam_file} --reference {input[0]} --output-prefix {params.out_dir}{params.sample}/{params.sample}_expansiondenovo --min-anchor-mapq 50 --max-irr-mapq 40 --log-reads
             cat {params.out_dir}{params.sample}/{params.sample}_expansiondenovo.locus.tsv | sed 's/contig/chr/g' | cut -f1-4 > {output.genotypeSTR_input}
         fi
@@ -601,9 +601,9 @@ rule genotypeSTR:
         mem_mb = memory
     shell:
         """
-        STR=({params[0]})
-        genotype=({params[1]})
-        if [ "${{STR}}" = "true" ] && [ "${{genotype}}" = "true" ]; then
+        STR="{params[0]}"
+        genotype="{params[1]}"
+        if [[ "$STR" == "True" ]] && [[ "$genotype" == "True" ]]; then
             python scripts/conversion_EHDN_catalog.py {input[0]} {input[1]} {output.EHDN_variant_catalog} {params.EHDN_unmatched} {params.EHDN_excluded}
             ExpansionHunter --reads {input[2]} --reference {input[1]} --variant-catalog {output.EHDN_variant_catalog} --output-prefix {params.out_dir}{params.sample}_EHDNexpansions
             bgzip {params.out_dir}{params.sample}_EHDNexpansions.vcf
@@ -634,10 +634,10 @@ rule STRannotation:
         mem_mb = memory
     shell:
         """
-        STR=({params[0]})
-        genotype=({params[1]})
-        annotation=({params[2]})
-        if [ "${{STR}}" = "true" ] && [ "${{genotype}}" = "true" ] && [ "${{annotation}}" = "true"]; then
+        STR="{params[0]}"
+        genotype="{params[1]}"
+        annotation="{params[2]}"
+        if [[ "$STR" == "True" ]] && [[ "$genotype" == "True" ]] && [[ "$annotation" == "True" ]]; then
             perl {config[ANNOVAR_DIR]}table_annovar.pl --thread {config[NUMBER_CPU]} --vcfinput {input[0]} {config[ANNOVAR_DB]} -buildver {params.ref_version} -remove -protocol {params.protocols} -operation {params.operations} -nastring . --outfile {params.out_dir}{params.sample}/annovar_EHDNexpansions.vcf
             mv {params.out_dir}{params.sample}/annovar_EHDNexpansions.vcf.{params.ref_version}_multianno.vcf {params.out_dir}{params.sample}/{params.sample}_STR_annotated.vcf
             bgzip -f {params.out_dir}{params.sample}/{params.sample}_STR_annotated.vcf ; tabix -fp vcf {output.annotated_EHDN_expansion_file}
@@ -664,9 +664,9 @@ rule CramToBam:
         mem_mb = memory
     shell:
         """
-        SV=({params[0]})
-        format=({params[1]})
-        if [ "${{SV}}" = "true" ] && [ "${{format}} = "cram" ]; then
+        SV="{params[0]}"
+        format="{params[1]}"
+        if [[ "$SV" == "True" ]] && [[ "$format" == "cram" ]]; then
             samtools view -b -h -@ {config[NUMBER_CPU]} -T {input[0]} -o {output.delly_bam} {input.input_file}
             samtools index -@ {config[NUMBER_CPU]} {output.delly_bam}
         fi
@@ -699,11 +699,11 @@ rule SV:
         mem_mb = memory
     shell:
         """
-        paired=({params[0]})
-        use_bed=({params[1]})
-        SV=({params[2]})
-        if [ "${{SV}}" = "true" ] && [ "${{paired}}" = "paired" ]; then
-            if [ "${{use_bed}}" = "true" ]; then
+        paired="{params[0]}"
+        use_bed="{params[1]}"
+        SV="{params[2]}"
+        if [[ "$SV" == "True" ]] && [[ "$paired" == "paired" ]]; then
+            if [[ "$use_bed" == "True" ]]; then
                 bgzip -c {input.bed} > {params.temp_bed}
                 sortBed -i {params.temp_bed} | bgzip -c > {params.sorted_bed}
                 tabix -p bed {params.sorted_bed}
@@ -757,11 +757,11 @@ rule SVannotation:
         mem_mb = memory
     shell:
         """
-        alsgenescanner=({params[0]})
-        annotation=({params[1]})
-        SV=({params[2]})
-        if [ "${{SV}}" = "true" ] && [ "${{annotation}} = "true" ]; then
-            if [ "${{alsgenescanner}} = "true" ]; then
+        alsgenescanner="{params[0]}"
+        annotation="{params[1]}"
+        SV="{params[2]}"
+        if [[ "$SV" == "True" ]] && [[ "$annotation" == "True" ]]; then
+            if [[ "$alsgenescanner" == "True" ]]; then
                 cpan YAML::XS
                 cpan Sort::Key::Natural
                 export ANNOTSV={config[ANNOTSV_DIR]}
@@ -799,10 +799,10 @@ rule MEI:
         mem_mb = memory
     shell:
         """
-        exome=({params[0]})
-        MEI=({params[1]})
-        if [ "${{MEI}}" = "true" ]; then
-            if [ "${{exome}}" = "true" ]; then
+        exome="{params[0]}"
+        MEI="{params[1]}"
+        if [[ "$MEI" == "True" ]]; then
+            if [[ "$exome" == "True" ]]; then
                 mkdir {params.out_dir}/{params.sample}/melt
                 ls {params[1]} | sed 's/\*//g' > {params.transposon_list}
                 java -Xmx{config[MEM_GB]}G -jar {config[MELT_DIR]}MELT.jar Single -bamfile {input.bam_file} -h {input[0]} -t {params.transposon_list} -n {input[1]} -w {params.out_dir}/{params.sample}/melt -exome {config[MELT_CUSTOM_OPTIONS]}
@@ -849,11 +849,11 @@ rule MEIannotation:
         mem_mb = memory
     shell:
         """
-        alsgenescanner=({params[0]})
-        MEI=({params[1]})
-        annotation=({params[2]})
-        if [ "${{MEI}}" = "true" ] && [ "${{annotation}}" = "true"]; then
-            if [ "${{alsgenescanner}}" = "true" ]; then
+        alsgenescanner="{params[0]}"
+        MEI="{params[1]}"
+        annotation="{params[2]}"
+        if [[ "$MEI" == "True" ]] && [[ "$annotation" == "True" ]]; then
+            if [[ "$alsgenescanner" == "True" ]]; then
                 cpan YAML::XS
                 cpan Sort::Key::Natural
                 export ANNOTSV={config[ANNOTSV_DIR]}
@@ -894,11 +894,11 @@ rule SVandMEImergingandannotation:
         mem_mb = memory
     shell:
         """
-        SV=({params[0]})
-        MEI=({params[1]})
-        annotation=({params[2]})
-        alsgenescanner=({params[3]})
-        if [ "${{SV}}" = "true" ] && [ "${{MEI}}" = "true" ]; then
+        SV="{params[0]}"
+        MEI="{params[1]}"
+        annotation="{params[2]}"
+        alsgenescanner="{params[3]}"
+        if [[ "$SV" == "True" ]] && [[ "$MEI" == "True" ]]; then
             mkdir {params.merged_dir}
             bgzip -d {input[0]} > {params.SV_vcf}
             bgzip -d {input[1]} > {params.MEI_vcf}
@@ -908,8 +908,8 @@ rule SVandMEImergingandannotation:
             tabix -p vcf {output.merged_SV_MEI}
             rm {params.out_dir}{params.sample}/survivor_sample_files
 
-            if [ "${{annotation}}" = "true" ]; then
-                if [ "${{alsgenescanner}}" = "true" ]; then
+            if [[ "$annotation" == "True" ]]; then
+                if [[ "$alsgenescanner" == "True" ]]; then
                     cpan YAML::XS
                     cpan Sort::Key::Natural
                     export ANNOTSV={config[ANNOTSV_DIR]}
@@ -944,10 +944,10 @@ rule extractnonhumanreads:
         mem_mb = memory
     shell:
         """
-        virus=({params[0]})
-        bacteria=({params[1]})
-        microbes=({params[2]})
-        if [[ "${{virus}}" = "true" || "${{bacteria}}" = "true" || "${{microbes}}" = "true" ]]; then
+        virus="{params[0]}"
+        bacteria="{params[1]}"
+        microbes="{params[2]}"
+        if [[ "$virus" == "True" || "$bacteria" == "True" || "$microbes" == "True" ]]; then
             samtools view -@ {config[NUMBER_CPU]} -hf 4 {input[0]} | samtools bam2fq -s {params.out_dir}{params.sample}/singleton_reads.fastq -@ {config[NUMBER_CPU]} - > {params.out_dir}{params.sample}/unaligned_reads.fastq
             cat {params.out_dir}{params.sample}/singleton_reads.fastq >> {params.out_dir}{params.sample}/unaligned_reads.fastq ; gzip {params.out_dir}{params.sample}/unaligned_reads.fastq
         fi
@@ -971,8 +971,8 @@ rule identifyviralmaterial:
         mem_mb = memory
     shell:
         """
-        virus=({params[0]})
-        if [ "${{virus}}" = "true" ]; then
+        virus="{params[0]"
+        if [[ "$virus" == "True" ]]; then
             hisat2 --no-spliced-alignment -p {config[NUMBER_CPU]} -x {config[VIRUS_INDEX]} -U {input[0]} | samtools view -@ {config[NUMBER_CPU]} -hSb - | samtools sort -@ {config[NUMBER_CPU]} -T {params.out_dir}{params.sample}tempvirus.file -o {params.out_dir}{params.sample}/{params.sample}_output_virus.bam -
             samtools index -@ {config[NUMBER_CPU]} {params.out_dir}{params.sample}/{params.sample}_output_virus.bam ; samtools idxstats {params.out_dir}{params.sample}/{params.sample}_output_virus.bam > {output.virus_stats}
             python scripts/non_human_reads_report.py {output.virus_stats} {params.out_dir}{params.sample}/{params.sample}_virus_stats.list {params.out_dir}{params.sample}/{params.sample}_output_virus.bam {params.out_dir}{params.sample}/{params.sample}_virus_coverage_stats.txt {output.virus_report}
@@ -997,8 +997,8 @@ rule identifybacterialmaterial:
         mem_mb = memory
     shell:
         """
-        bacteria=({params[0]})
-        if [ "${{bacteria}}" = "true" ]; then
+        bacteria="{params[0]}"
+        if [[ "$bacteria" == "True" ]]; then
             hisat2 --no-spliced-alignment -p {config[NUMBER_CPU]} -x {config[BACTERIA_INDEX]} -U {input[0]} | samtools view -@ {config[NUMBER_CPU]} -hSb - | samtools sort -@ {config[NUMBER_CPU]} -T {params.out_dir}{params.sample}tempbacteria.file -o {params.out_dir}{params.sample}/{params.sample}_output_bacteria.bam -
             samtools index -@ {config[NUMBER_CPU]} {params.out_dir}{params.sample}/{params.sample}_output_bacteria.bam ; samtools idxstats {params.out_dir}{params.sample}/{params.sample}_output_bacteria.bam > {output.bacteria_stats}
             python scripts/non_human_reads_report.py {output.bacteria_stats} {params.out_dir}{params.sample}/{params.sample}_bacteria_stats.list {params.out_dir}{params.sample}/{params.sample}_output_bacteria.bam {params.out_dir}{params.sample}/{params.sample}_bacteria_coverage_stats.txt {output.bacteria_report}
@@ -1023,8 +1023,8 @@ rule identifycustommaterial:
         mem_mb = memory
     shell:
         """
-        microbes=({params[0]})
-        if [ "${{microbes}}" = "true" ]; then
+        microbes="{params[0]}"
+        if [[ "$microbes" == "True" ]]; then
             hisat2 --no-spliced-alignment -p {config[NUMBER_CPU]} -x {config[CUSTOM_MICROBES_INDEX]} -U {input[0]} | samtools view -@ {config[NUMBER_CPU]} -hSb - | samtools sort -@ {config[NUMBER_CPU]} -T {params.out_dir}{params.sample}tempmicrobes.file -o {params.out_dir}{params.sample}/{params.sample}_output_microbes.bam -
             samtools index -@ {config[NUMBER_CPU]} {params.out_dir}{params.sample}/{params.sample}_output_microbes.bam ; samtools idxstats {params.out_dir}{params.sample}/{params.sample}_output_microbes.bam > {output.microbes_stats}
             python scripts/non_human_reads_report.py {output.micrboes_stats} {params.out_dir}{params.sample}/{params.sample}_microbes_stats.list {params.out_dir}{params.sample}/{params.sample}_output_microbes.bam {params.out_dir}{params.sample}/{params.sample}_microbes_coverage_stats.txt {output.microbes_report}
@@ -1047,8 +1047,8 @@ rule alignmentreport:
         mem_mb = memory
     shell:
         """
-        alignment_report=({params.alignmentreport})
-        if [ "${{alignment_report}}" = "true" ]; then
+        alignment_report="{params.alignmentreport}"
+        if [[ "$alignment_report" == "True" ]]; then
             samtools flagstat -@ {config[NUMBER_CPU]} {input[0]} > {output.flagstat}
             samtools stats -@ {config[NUMBER_CPU]} {input[0]} > {output.stats}
         fi
@@ -1072,9 +1072,9 @@ rule sequencingreport:
         mem_mb = memory
     shell:
         """
-        format=({params[0]})
-        sequencing_report=({params.sequencingreport})
-        if [ "${{sequencing_report}}" = "true" ] && [ "${{format}}" = "fastq" ]; then
+        format="{params[0]}"
+        sequencing_report="{params.sequencingreport}"
+        if [[ "$sequencing_report" == "True" ]] && [[ "$format" == "fastq" ]]; then
             fastqc -o {params.out_dir} -f fastq -t {config[NUMBER_CPU]} {input[0]} {input[1]}
         fi
         """
@@ -1097,9 +1097,9 @@ rule callsreport:
         mem_mb = memory
     shell:
         """
-        calls_report=({params.callsreport})
-        variantcalling=({params[0]})
-        if [ "${{calls_report}}" = "true" ] && and [ "${{variantcalling}}" = "true" ]; then
+        calls_report="{params.callsreport}"
+        variantcalling="{params[0]}"
+        if [[ "$calls_report" == "True" ]] && and [[ "$variantcalling" == "True" ]]; then
             bcftools stats --threads {config[NUMBER_CPU]} {input.variant_file} > {output.vcfstats}
         fi
         """
@@ -1121,10 +1121,10 @@ rule multireport:
         mem_mb = memory
     shell:
         """
-        alignment_report=({params.alignmentreport})
-        sequencing_report=({params.sequencingreport})
-        calls_report=({params.callsreport})
-        if [[ "${{alignment_report}}" = "true" || "${{sequencing_report}}" = "true" || "${{calls_report}}" = "true"]]; then
+        alignment_report="{params.alignmentreport}"
+        sequencing_report="{params.sequencingreport}"
+        calls_report="{params.callsreport}"
+        if [[ "$alignment_report" == "True" || "$sequencing_report" == "True" || "$calls_report" == "True" ]]; then
             multiqc -o {input[0]} {input[0]}
         fi
         """
@@ -1153,10 +1153,10 @@ rule variantresultsreport:
         mem_mb = memory
     shell:
         """
-        annotation=({params[0]})
-        results_report=({params.resultsreport})
-        variantcalling=({params[1]})
-        if [ "${{variantcalling}}" = "true" ] && and [ "${{annotation}}" = "true" ] && [ "${{results_report}}" = "true" ]; then
+        annotation="{params[0]}"
+        results_report="{params.resultsreport}"
+        variantcalling="{params[1]}"
+        if [[ "$variantcalling" == "True" ]] && [[ "$annotation" == "True" ]] && [[ "$results_report" == "True" ]]; then
             gzip -d {input[0]}
             python scripts/simpleannotationreport.py {params.results}{params.sample}/{params.sample}_SNPindel_annotated.vcf {input[1]} {output.SNPindel_annotation_report}
             bgzip {params.results}{params.sample}/{params.sample}_SNPindel_annotated.vcf
@@ -1187,10 +1187,10 @@ rule expansionresultsreport:
         mem_mb = memory
     shell:
         """
-        annotation=({params[0]})
-        results_report=({params[1]})
-        expansion=({params.expansion})
-        if [ "${{expansion}}" = "true" ] && [ "${{annotation}}" = "true" ] && [ "${{results_report}}" = "true" ]; then
+        annotation="{params[0]}"
+        results_report="{params.resultsreport}"
+        expansion="{params[1]}"
+        if [[ "$expansion" == "True" ]] && [[ "$annotation" == "True" ]] && [[ "$results_report" == "True" ]]; then
             gzip -d {input[0]}
             python scripts/simpleannotationreport.py {params.results}{params.sample}/{params.sample}_expansions_annotated.vcf {input[1]} {output.expansion_annotation_report}
             bgzip {params.results}{params.sample}/{params.sample}_expansions_annotated.vcf
@@ -1221,10 +1221,10 @@ rule STRresultsreport:
         mem_mb = memory
     shell:
         """
-        annotation=({params[0]})
-        results_report=({params.results_report})
-        genotype=({params[1]})
-        if [ "${{genotype}}" = "true" ] && [ "${{annotation}}" = "true" ] && [ "${{results_report}}" = "true" ]; then
+        annotation="{params[0]}"
+        results_report="{params.resultsreport}"
+        genotype="{params[1]}"
+        if [[ "$genotype" == "True" ]] && [[ "$annotation" == "True" ]] && [[ "$results_report" == "True" ]]; then
             gzip -d {input[0]}
             python scripts/simpleannotationreport.py {params.results}{params.sample}/{params.sample}_STR_annotated.vcf {input[1]} {output.STR_annotation_report}
             bgzip {params.results}{params.sample}/{params.sample}_STR_annotated.vcf
@@ -1253,11 +1253,11 @@ rule SVandMEIreport:
         mem_mb = memory
     shell:
         """
-        SV=({params[0]})
-        MEI=({params[1]})
-        results_report=({params.resultsreport})
-        annotation=({params[2]})
-        if [ "${{SV}}" = "true" ] && [ "${{MEI}}" = "true" ] && [ "${{annotation}}" = "true" ] && [ "${{resultsreport}}" = "true" ]; then
+        SV="{params[0]}"
+        MEI="{params[1]}"
+        results_report="{params.resultsreport}"
+        annotation="{params[2]}"
+        if [[ "$SV" == "True" ]] && [[ "$MEI" == "True" ]] && [[ "$annotation" == "True" ]] && [[ "$results_report" == "True" ]]; then
             cpan YAML::XS
             cpan Sort::Key::Natural
             export ANNOTSV={config[ANNOTSV_DIR]}
@@ -1285,10 +1285,10 @@ rule SVreport:
         mem_mb = memory
     shell:
         """
-        SV=({params[0]})
-        results_report=({params.resultsreport})
-        annotation=({params[1]})
-        if [ "${{SV}}" = "true" ] && [ "${{annotation}}" = "true" ] && [ "${{results_report}}" = "true" ]; then
+        SV="{params[0]}"
+        results_report="{params.resultsreport}"
+        annotation="{params[1]}"
+        if [[ "$SV" == "True" ]] && [[ "$annotation" == "True" ]] && [[ "$results_report" == "True" ]]; then
             cpan YAML::XS
             cpan Sort::Key::Natural
             export ANNOTSV={config[ANNOTSV_DIR]}
@@ -1316,10 +1316,10 @@ rule MEIreport:
         mem_mb = memory
     shell:
         """
-        MEI=({params[0]})
-        results_report=({params.resultsreport})
-        annotation=({params[1]})
-        if [ "${{MEI}}" = "true" ] && and [ "${{annotation}}" = "true" ] && [ "${{resultsreport}}" = "true" ]; then
+        MEI="{params[0]}"
+        results_report="{params.resultsreport}"
+        annotation="{params[1]}"
+        if [[ "$MEI" == "True" ]] && [[ "$annotation" == "True" ]] && [[ "$results_report" == "True" ]]; then
             cpan YAML::XS
             cpan Sort::Key::Natural
             export ANNOTSV={config[ANNOTSV_DIR]}
@@ -1356,22 +1356,22 @@ rule conciseresultsreport:
         mem_mb = memory
     shell:
         """
-        results_report=({params.resultsreport})
-        annotation=({params[0]})
-        expansion=({params[1]})
-        variantcalling=({params[2]})
-        STR=({params[3]})
-        genotype=({params[4]})
-        SV=({params[5]})
-        MEI=({params[6]})
-        if [[ "${{results_report}}" = "true" && "${{annotation}}" = "true" && "${{variantcalling}}" = "true" && "${{SV}}" = "true" && "${{MEI}}" = "true" ]]; then
+        results_report="{params.resultsreport}"
+        annotation="{params[0]}"
+        expansion="{params[1]}"
+        variantcalling="{params[2]}"
+        STR="{params[3]}"
+        genotype="{params[4]}"
+        SV="{params[5]}"
+        MEI="{params[6]}"
+        if [[ "$results_report" == "True" ]] && [[ "$annotation" == "True" ]] && [[ "$variantcalling" == "True" ]] && [[ "$SV" == "True" ]] && [[ "$MEI" == "True" ]]; then
             python scripts/concisereportSNPindelSVandMEI.py {input.SV_results} {params.tempSVMEI_variants} {input.variantresults} {params.tempSNPindel_variants} scripts/all_variants_report_header.txt {output.concise_report}
-            if [ "${{expansion}}" = "true" ] && [ "${{genotype}}" = "true" ]; then
+            if [[ "$expansion" == "True" ]] && [[ "$genotype" = "True" ]]; then
                 python scripts/concisereportexpansionandSTR.py {input.expansionresults} {params.tempexpansion_variants} {input.STRresults} {params.tempSTR_variants} {output.concise_report}
                 need to make expansion and then add genotype onto that before adding onto snpindel
-            elif [ "${{expansion}}" = "true" ]; then
+            elif [[ "$expansion" == "True" ]]; then
                 python scripts/concisereportexpansion.py {input.expansionresults} {params.tempexpansion_variants} {output.concise_report}
-            elif [ "${{genotype}}" = "true" ]; then
+            elif [[ "$genotype" == "True" ]]; then
                 python scripts/concisereportSTR.py {input.STRresults} {params.tempSTR_variants} {output.concise_report}
             fi
         fi
@@ -1401,7 +1401,6 @@ rule AGSscoring:
         variantcalling,
         alsgenescanner,
         annotation,
-        out_dir = reports_dir,
         alsod_list = "resources/alsgenescanner/list_genes_alsod.txt",
         clinvar_list = "resources/alsgenescanner/list_genes_clinvar.txt",
         review_list = "resources/alsgenescanner/list_genes_manual_review.txt",
@@ -1412,10 +1411,10 @@ rule AGSscoring:
         mem_mb = memory
     shell:
         """
-        variantcalling=({params[0]})
-        alsgenescanner=({params[1]})
-        annotation=({params[2]})
-        if [ "${{variantcalling}}" = "true" ] && [ "${{alsgenescanner}}" = "true" ] && [ "${{annotation}}" = "true" ]; then
+        variantcalling="{params[0]}"
+        alsgenescanner="{params[1]}"
+        annotation="{params[2]}"
+        if [[ "$variantcalling" == "True" ]] && [[ "$alsgenescanner" == "True" ]] && [[ "$annotation" == "True" ]]; then
             python scripts/alsgenescanner.py {input[0]} {output.alsgenescanner_all}
             python scripts/alsgenescannerreport.py {output.alsgenescanner_all} {output.alsgenescanner_alsod} {params.alsod_list} {output.alsgenescanner_clinvar} {params.clinvar_list} {output.alsgenescanner_manual_review} {params.review_list} {output.alsgenescanner_ranked}
         fi
