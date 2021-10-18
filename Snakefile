@@ -383,6 +383,7 @@ rule variantcallingfiltered:
                 mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz.tbi {params.temp_results_filtered_index}
                 rm -r {params.out_dir}{params.sample}/strelka
                 bcftools filter -i '{config[VARIANT_FILTER_STRING]}' {params.temp_results_filtered} | bgzip -c > {output.variant_results_file_filtered} ; tabix -fp vcf {output.variant_results_file_filtered}
+                rm -r {params.out_dir}{params.sample}/strelka
 
                 if [[ "$exome" == "True" ]]; then
                     {config[STRELKA_DIR]}bin/configureStrelkaGermlineWorkflow.py --bam {input.bam_file} --referenceFasta {input[0]} --runDir {params.out_dir}/{params.sample}/strelka --exome
@@ -390,6 +391,7 @@ rule variantcallingfiltered:
                     mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz {params.temp_results_filtered}
                     mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz.tbi {params.temp_results_filtered_index}
                     bcftools filter -i '{config[VARIANT_FILTER_STRING]}' {params.temp_results_filtered} | bgzip -c > {output.variant_results_file_filtered} ; tabix -fp vcf {output.variant_results_file_filtered}
+                    rm -r {params.out_dir}{params.sample}/strelka
 
                     if [[ "$bed" == "True" ]]; then
                         bgzip -c {input.bed} > {params.temp_bed}
@@ -400,6 +402,7 @@ rule variantcallingfiltered:
                         mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz {params.temp_results_filtered}
                         mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz.tbi {params.temp_results_filtered_index}
                         bcftools filter -i '{config[VARIANT_FILTER_STRING]}' {params.temp_results_filtered} | bgzip -c > {output.variant_results_file_filtered} ; tabix -fp vcf {output.variant_results_file_filtered}
+                        rm -r {params.out_dir}{params.sample}/strelka
                     fi
                 fi
             fi
@@ -442,12 +445,14 @@ rule variantcalling:
             {params.out_dir}{params.sample}/strelka/runWorkflow.py -j {config[NUMBER_CPU]} -m local
             mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz {output.variant_results_file}
             mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz.tbi {output.variant_results_file_index}
+            rm -r {params.out_dir}{params.sample}/strelka
 
             if [[ "$exome" == "True" ]]; then
                 {config[STRELKA_DIR]}bin/configureStrelkaGermlineWorkflow.py --bam {input.bam_file} --referenceFasta {input[0]} --runDir {params.out_dir}/{params.sample}/strelka --exome
                 {params.out_dir}{params.sample}/strelka/runWorkflow.py -j {config[NUMBER_CPU]} -m local
                 mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz {output.variant_results_file}
                 mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz.tbi {output.variant_results_file_index}
+                rm -r {params.out_dir}{params.sample}/strelka
 
                 if [[ "$bed" == "True" ]]; then
                     bgzip -c {input.bed} > {params.temp_bed}
@@ -457,6 +462,7 @@ rule variantcalling:
                     {params.out_dir}{params.sample}/strelka/runWorkflow.py -j {config[NUMBER_CPU]} -m local
                     mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz {output.variant_results_file}
                     mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz.tbi {output.variant_results_file_index}
+                    rm -r {params.out_dir}{params.sample}/strelka
                 fi
             fi
         fi
@@ -536,6 +542,8 @@ rule expansionannotation:
     params:
         expansion,
         annotation,
+        debug,
+        alsgenescanner,
         out_dir = results_dir,
         sample = "{sample}",
         ref_version = annovar_ref_version,
@@ -549,10 +557,18 @@ rule expansionannotation:
         """
         expansion="{params[0]}"
         annotation="{params[1]}"
+        debug="{params[2]}"
+        alsgenescanner="{params[3]}"
         if [[ "$expansion" == "True" ]] && [[ "$annotation" == "True" ]]; then
             perl {config[ANNOVAR_DIR]}table_annovar.pl --thread {config[NUMBER_CPU]} --vcfinput {input[0]} {config[ANNOVAR_DB]} -buildver {params.ref_version} -remove -protocol {params.protocols} -operation {params.operations} -nastring . --outfile {params.out_dir}{params.sample}/annovar_expansions.vcf
             mv {params.out_dir}{params.sample}/annovar_expansions.vcf.{params.ref_version}_multianno.vcf {params.out_dir}{params.sample}/{params.sample}_expansions_annotated.vcf
             bgzip -f {params.out_dir}{params.sample}/{params.sample}_expansions_annotated.vcf ; tabix -fp vcf {params.out_dir}{params.sample}/{params.sample}_expansions_annotated.vcf.gz
+            if [[ "$debug" == "True" ]]; then
+            rm {params.out_dir}{params.sample}/annovar_expansions.vcf.avinput
+            fi
+            if [[ "$alsgenescanner" != "True" ]]; then
+                rm {params.out_dir}{params.sample}/annovar_expansions.vcf.{params.ref_version}_multianno.txt
+            fi
         fi
         """
 
@@ -693,6 +709,7 @@ rule SV:
         paired,
         BED,
         SV,
+        debug,
         temp_bed = results_dir + "{sample}/temp.bed.gz",
         sorted_bed = results_dir + "{sample}/sorted.bed.gz",
         out_dir = results_dir,
@@ -707,6 +724,7 @@ rule SV:
         paired="{params[0]}"
         use_bed="{params[1]}"
         SV="{params[2]}"
+        debug="{params[3]}"
         if [[ "$SV" == "True" ]] && [[ "$paired" == "paired" ]]; then
             if [[ "$use_bed" == "True" ]]; then
                 bgzip -c {input.bed} > {params.temp_bed}
@@ -723,8 +741,9 @@ rule SV:
                 SURVIVOR merge {params.out_dir}{params.sample}/survivor_sample_files 1000 1 1 1 0 30 {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf
                 perl scripts/vcf-sort.pl {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf | bgzip -c > {output.merged_SV}
                 tabix -p vcf {output.merged_SV}
-                rm {params.out_dir}{params.sample}/survivor_sample_files {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf.csi {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf
-
+                if [[ "$debug" == "True" ]]; then
+                rm {params.out_dir}{params.sample}/survivor_sample_files {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf.csi {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf {params.out_dir}{params.sample}/{params.sample}_delly_SV.vcf {params.out_dir}{params.sample}/{params.sample}_SV_manta.vcf
+                fi
             else
                 {config[MANTA_DIR]}bin/configManta.py --bam {input.bam_file} --referenceFasta {input[0]} --runDir {params.out_dir}{params.sample}/SV_manta
                 {params.out_dir}{params.sample}/SV_manta/runWorkflow.py -j {config[NUMBER_CPU]} -m local
@@ -737,7 +756,9 @@ rule SV:
                 SURVIVOR merge {params.out_dir}{params.sample}/survivor_sample_files 1000 1 1 1 0 30 {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf
                 perl scripts/vcf-sort.pl {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf | bgzip -c > {output.merged_SV}
                 tabix -p vcf {output.merged_SV}
-                rm {params.out_dir}{params.sample}/survivor_sample_files {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf.csi {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf
+                if [[ "$debug" == "True" ]]; then
+                rm {params.out_dir}{params.sample}/survivor_sample_files {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf.csi {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf {params.out_dir}{params.sample}/{params.sample}_delly_SV.vcf {params.out_dir}{params.sample}/{params.sample}_SV_manta.vcf
+                fi
             fi
         fi
         """
