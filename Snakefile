@@ -1,4 +1,4 @@
-configfile: "config.yaml"
+onfigfile: "config.yaml"
 
 import os
 import os.path
@@ -348,7 +348,8 @@ rule variantcallingfiltered:
         bed = rules.custombed.output.custom_bed if use_gene_list == "true" else (path_bed if BED == "true" and not use_gene_list else (alsgenescanner_bed if alsgenescanner == "true" else [])),
         bam_file = input_dir + "{sample}.bam" if config["INPUT_FORMAT"] == "bam" else (input_dir + "{sample}.cram" if config["INPUT_FORMAT"] == "cram" else (rules.sam2bam.output.bam_file if config["INPUT_FORMAT"] == "sam" else (rules.alignment.output.bam_file if config["INPUT_FORMAT"] == "fastq" else [])))
     output:
-        variant_results_file_filtered = results_dir + "{sample}/{sample}_sorted_filtered.vcf.gz"
+        variant_results_file_filtered = results_dir + "{sample}/{sample}_sorted_filtered.vcf.gz",
+        variant_results_file_filtered_index = results_dir + "{sample}/{sample}_sorted_filtered.vcf.gz.tbi"
     log:
         log_dir + "{sample}/variantcallingfiltered.log"
     conda:
@@ -411,7 +412,8 @@ rule variantcalling:
         bed = rules.custombed.output.custom_bed if use_gene_list == "true" else (path_bed if BED == "true" and not use_gene_list else (alsgenescanner_bed if alsgenescanner == "true" else [])),
         bam_file = rules.alignment.output.bam_file if config["INPUT_FORMAT"] == "fastq" else (input_dir + "{sample}.bam" if config["INPUT_FORMAT"] == "bam" else (input_dir + "{sample}.cram" if config["INPUT_FORMAT"] == "cram" else (rules.sam2bam.output.bam_file if config["INPUT_FORMAT"] == "sam" else [])))
     output:
-        variant_results_file = results_dir + "{sample}/{sample}_sorted.vcf.gz"
+        variant_results_file = results_dir + "{sample}/{sample}_sorted.vcf.gz",
+        variant_results_file_index = results_dir + "{sample}/{sample}_sorted.vcf.gz.tbi"
     log:
         log_dir + "{sample}/variantcalling.log"
     conda:
@@ -729,7 +731,7 @@ rule SV:
                 delly call -g {input[0]} -o {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf -x {params.delly_exclude_regions} {input.bam_file}
                 bcftools view {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf > {output.delly_SV}
                 ls {params.out_dir}{params.sample}/*SV.vcf > {params.out_dir}{params.sample}/survivor_sample_files
-                {config[SURVIVOR_DIR]}SURVIVOR merge {params.out_dir}{params.sample}/survivor_sample_files 1000 1 1 1 0 30 {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf
+                SURVIVOR merge {params.out_dir}{params.sample}/survivor_sample_files 1000 1 1 1 0 30 {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf
                 perl scripts/vcf-sort.pl {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf | bgzip -c > {output.merged_SV}
                 tabix -p vcf {output.merged_SV}
                 rm {params.out_dir}{params.sample}/survivor_sample_files {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf {params.out_dir}{params.sample}/{params.sample}_delly_SV.bcf.csi {params.out_dir}{params.sample}/{params.sample}_merged_SV.vcf
@@ -903,7 +905,7 @@ rule SVandMEImergingandannotation:
             bgzip -d {input[0]} > {params.SV_vcf}
             bgzip -d {input[1]} > {params.MEI_vcf}
             ls {params.merged_dir}*.vcf > {params.out_dir}{params.sample}survivor_sample_files
-            {config[SURVIVOR_DIR]}SURVIVOR merge {params.out_dir}{params.sample}survivor_sample_files 1000 1 1 1 0 30 {params.out_dir}{params.sample}/{params.sample}_SV_MEI.merged.vcf
+            SURVIVOR merge {params.out_dir}{params.sample}survivor_sample_files 1000 1 1 1 0 30 {params.out_dir}{params.sample}/{params.sample}_SV_MEI.merged.vcf
             perl scripts/vcf-sort.pl {params.out_dir}{params.sample}/{params.sample}_SV_MEI.merged.vcf | bgzip -c > {output.merged_SV_MEI}
             tabix -p vcf {output.merged_SV_MEI}
             rm {params.out_dir}{params.sample}/survivor_sample_files
