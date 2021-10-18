@@ -1,4 +1,4 @@
-onfigfile: "config.yaml"
+configfile: "config.yaml"
 
 import os
 import os.path
@@ -382,14 +382,14 @@ rule variantcallingfiltered:
                 mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz {params.temp_results_filtered}
                 mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz.tbi {params.temp_results_filtered_index}
                 rm -r {params.out_dir}{params.sample}/strelka
-                bcftools filter -i '{config[VARIANT_FILTER_STRING]}' {params.temp_results_filtered} | bgzip -c > {output.variant_results_file} ; tabix -fp vcf {output.variant_results_file}
+                bcftools filter -i '{config[VARIANT_FILTER_STRING]}' {params.temp_results_filtered} | bgzip -c > {output.variant_results_file_filtered} ; tabix -fp vcf {output.variant_results_file_filtered}
 
                 if [[ "$exome" == "True" ]]; then
                     {config[STRELKA_DIR]}bin/configureStrelkaGermlineWorkflow.py --bam {input.bam_file} --referenceFasta {input[0]} --runDir {params.out_dir}/{params.sample}/strelka --exome
                     {params.out_dir}{params.sample}/strelka/runWorkflow.py -j {config[NUMBER_CPU]} -m local
                     mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz {params.temp_results_filtered}
                     mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz.tbi {params.temp_results_filtered_index}
-                    bcftools filter -i '{config[VARIANT_FILTER_STRING]}' {params.temp_results_filtered} | bgzip -c > {output.variant_results_file} ; tabix -fp vcf {output.variant_results_file}
+                    bcftools filter -i '{config[VARIANT_FILTER_STRING]}' {params.temp_results_filtered} | bgzip -c > {output.variant_results_file_filtered} ; tabix -fp vcf {output.variant_results_file_filtered}
 
                     if [[ "$bed" == "True" ]]; then
                         bgzip -c {input.bed} > {params.temp_bed}
@@ -399,7 +399,7 @@ rule variantcallingfiltered:
                         {params.out_dir}{params.sample}/strelka/runWorkflow.py -j {config[NUMBER_CPU]} -m local
                         mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz {params.temp_results_filtered}
                         mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz.tbi {params.temp_results_filtered_index}
-                        bcftools filter -i '{config[VARIANT_FILTER_STRING]}' {params.temp_results_filtered} | bgzip -c > {output.variant_results_file} ; tabix -fp vcf {output.variant_results_file}
+                        bcftools filter -i '{config[VARIANT_FILTER_STRING]}' {params.temp_results_filtered} | bgzip -c > {output.variant_results_file_filtered} ; tabix -fp vcf {output.variant_results_file_filtered}
                     fi
                 fi
             fi
@@ -438,11 +438,10 @@ rule variantcalling:
         bed="{params[3]}"
         filter_string="{params[4]}"
         if [[ "$variantcalling" == "True" ]] && [[ "$filter_string" != "True" ]]; then
-            {config[STRELKA_DIR]}bin/configureStrelkaGermlineWorkflow.py --bam {input.bam_file} --referenceFasta {input[0]} --runDir {params.out_dir}/{params.sample}/strelka
+            {config[STRELKA_DIR]}bin/configureStrelkaGermlineWorkflow.py --bam {input.bam_file} --referenceFasta {input[0]} --runDir {params.out_dir}{params.sample}/strelka
             {params.out_dir}{params.sample}/strelka/runWorkflow.py -j {config[NUMBER_CPU]} -m local
             mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz {output.variant_results_file}
             mv {params.out_dir}{params.sample}/strelka/results/variants/genome.S1.vcf.gz.tbi {output.variant_results_file_index}
-            rm -r {params.out_dir}{params.sample}/strelka
 
             if [[ "$exome" == "True" ]]; then
                 {config[STRELKA_DIR]}bin/configureStrelkaGermlineWorkflow.py --bam {input.bam_file} --referenceFasta {input[0]} --runDir {params.out_dir}/{params.sample}/strelka --exome
@@ -465,7 +464,6 @@ rule variantcalling:
 
 rule variantannotation:
     input:
-        out_dir = results_dir,
         variant_file = rules.variantcalling.output.variant_results_file if alsgenescanner == "true" or filter_string != "true" else (rules.variantcallingfiltered.output.variant_results_file_filtered if filter_string == "true" else []),
     output:
         annotated_variant_results_file = results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz",
@@ -475,6 +473,7 @@ rule variantannotation:
         annotation,
         variantcalling,
         ref_version = annovar_ref_version,
+        out_dir = results_dir,
         sample = "{sample}",
         operations = alsgene_annovar_operations if alsgenescanner == "true" else annovar_operations,
         protocols = alsgene_annovar_protocols if alsgenescanner == "true" else annovar_protocols
@@ -487,10 +486,10 @@ rule variantannotation:
         variantcalling="{params[1]}"
         annotation="{params[0]}"
         if [[ "$variantcalling" == "True" ]] && and [[ "$annotation" == "True" ]]; then
-            perl {config[ANNOVAR_DIR]}table_annovar.pl --thread {config[NUMBER_CPU]} --vcfinput {input.variant_file} {config[ANNOVAR_DB]} -buildver {params.ref_version} -remove -protocol {params.protocols} -operation {params.operations} -nastring . --outfile {input.out_dir}{params.sample}/{params.sample}_annovar_SNPindel.vcf
-            mv {input.out_dir}{params.sample}/{params.sample}_annovar_SNPindel.vcf.{params.ref_version}_multianno.vcf {input.out_dir}{params.sample}/{params.sample}_SNPindel_annotated.vcf
-            mv {input.out_dir}{params.sample}/annovar_SNPindel.vcf.{params.ref_version}_multianno.txt {output.annotated_variant_results_text}
-            bgzip -f {input.out_dir}{params.sample}/{params.sample}_SNPindel_annotated.vcf ; tabix -fp vcf {input.out_dir}{params.sample}/{params.sample}_SNPindel_annotated.vcf.gz
+            perl {config[ANNOVAR_DIR]}table_annovar.pl --thread {config[NUMBER_CPU]} --vcfinput {input.variant_file} {config[ANNOVAR_DB]} -buildver {params.ref_version} -remove -protocol {params.protocols} -operation {params.operations} -nastring . --outfile {params.out_dir}{params.sample}/{params.sample}_annovar_SNPindel.vcf
+            mv {params.out_dir}{params.sample}/{params.sample}_annovar_SNPindel.vcf.{params.ref_version}_multianno.vcf {params.out_dir}{params.sample}/{params.sample}_SNPindel_annotated.vcf
+            mv {params.out_dir}{params.sample}/annovar_SNPindel.vcf.{params.ref_version}_multianno.txt {output.annotated_variant_results_text}
+            bgzip -f {params.out_dir}{params.sample}/{params.sample}_SNPindel_annotated.vcf ; tabix -fp vcf {params.out_dir}{params.sample}/{params.sample}_SNPindel_annotated.vcf.gz
         fi
         """
 
@@ -505,6 +504,7 @@ rule expansion:
         "envs/variantcalling.yaml"
     params:
         expansion,
+        debug,
         out_dir = results_dir,
         sample = "{sample}",
         variant_catalog = path_expansionHunter_catalog
@@ -515,10 +515,13 @@ rule expansion:
     shell:
         """
         expansion="{params[0]}"
+        debug="{params[1]}"
         if [[ "$expansion" == "True" ]]; then
-            ExpansionHunter --reads {input.bam_file} --reference {input[0]} --variant-catalog {params.variant_catalog} --output-prefix {params.out_dir}{params.sample}_expansions
-            bgzip {params.out_dir}{params.sample}_expansions.vcf
-            tabix -p vcf {output.expansion_file}
+            ExpansionHunter --reads {input.bam_file} --reference {input[0]} --variant-catalog {params.variant_catalog} --output-prefix {params.out_dir}{params.sample}/{params.sample}_expansions
+            bgzip {params.out_dir}{params.sample}/{params.sample}_expansions.vcf ; tabix -p vcf {output.expansion_file}
+            if [[ "$debug" != "True" ]]; then
+                rm {params.out_dir}{params.sample}/{params.sample}_expansions_realigned.bam {params.out_dir}{params.sample}/{params.sample}_expansions.json
+            fi
         fi
         """
 
@@ -680,7 +683,7 @@ rule SV:
         bed = rules.custombed.output.custom_bed if use_gene_list == "true" else (path_bed if BED == "true" and not use_gene_list else (alsgenescanner_bed if alsgenescanner == "true" else [])),
         bam_file = input_dir + "{sample}.bam" if config["INPUT_FORMAT"] == "bam" else (rules.CramToBam.output.delly_bam if config["INPUT_FORMAT"] == "cram" else (rules.sam2bam.output.bam_file if config["INPUT_FORMAT"] == "sam" else (rules.alignment.output.bam_file if config["INPUT_FORMAT"] == "fastq" else [])))
     output:
-        manta_SV = results_dir + "{sample}/{sample}_manta_SV.vcf",
+        manta_SV = results_dir + "{sample}/{sample}_SV_manta.vcf",
         delly_SV = results_dir + "{sample}/{sample}_delly_SV.vcf",
         merged_SV = results_dir + "{sample}/{sample}_merged_SV.vcf.gz",
         merged_SV_index = results_dir + "{sample}/{sample}_merged_SV.vcf.gz.tbi"
@@ -710,7 +713,7 @@ rule SV:
                 sortBed -i {params.temp_bed} | bgzip -c > {params.sorted_bed}
                 tabix -p bed {params.sorted_bed}
                 {config[MANTA_DIR]}bin/configManta.py --bam {input.bam_file} --referenceFasta {input[0]} --runDir {params.out_dir}{params.sample}/SV_manta --callRegions {params.sorted_bed}
-                {params.out_dir}{params.sample}SV_manta/runWorkflow.py -j {config[NUMBER_CPU]} -m local
+                {params.out_dir}{params.sample}/SV_manta/runWorkflow.py -j {config[NUMBER_CPU]} -m local
                 mv {params.out_dir}{params.sample}/SV_manta/results/variants/diploidSV.vcf.gz {params.out_dir}{params.sample}/{params.sample}_SV_manta.vcf.gz
                 gzip -d {params.out_dir}{params.sample}/{params.sample}_SV_manta.vcf.gz
                 rm -r {params.out_dir}{params.sample}/SV_manta
@@ -724,7 +727,7 @@ rule SV:
 
             else
                 {config[MANTA_DIR]}bin/configManta.py --bam {input.bam_file} --referenceFasta {input[0]} --runDir {params.out_dir}{params.sample}/SV_manta
-                {params.out_dir}{params.sample}SV_manta/runWorkflow.py -j {config[NUMBER_CPU]} -m local
+                {params.out_dir}{params.sample}/SV_manta/runWorkflow.py -j {config[NUMBER_CPU]} -m local
                 mv {params.out_dir}{params.sample}/SV_manta/results/variants/diploidSV.vcf.gz {params.out_dir}{params.sample}/{params.sample}_SV_manta.vcf.gz
                 gzip -d {params.out_dir}{params.sample}/{params.sample}_SV_manta.vcf.gz
                 rm -r {params.out_dir}{params.sample}/SV_manta
