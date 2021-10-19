@@ -66,16 +66,31 @@ To submit jobs on the selected cluster, there are two methods (cluster execution
 conda install -c conda-forge cookiecutter
 ```
 
-Navigate to the [Snakemake profile templates page](https://github.com/Snakemake-Profiles), choose your HPC/execution system and follow the instructions for installation into the DNAscanv2_snakemake directory. The results will be a named profile directory with the structure *HPC_system.account_name*. 
+Navigate to the [Snakemake profile templates page](https://github.com/Snakemake-Profiles), choose your HPC/execution system and follow the instructions for installation into the DNAscanv2_snakemake directory. The results will be a named profile directory with the structure *HPC_system.account_name*, which you will need to specify when running DNAscan2. 
+
+Alternatively, you can specify a cluster_config.json file on the command line. Instructions on how to do this is available [here](https://snakemake.readthedocs.io/en/stable/snakefiles/configuration.html#cluster-configuration-deprecated).
 
 ### Usage
 
+To demonstrate the differences in execution between the cluster execution methods, consider a scenario where SNV/indel calling and filtering has to be performed on 20 samples on a SLURM cluster:
+
+Method 1: Snakemake job execution profile
+``` bash
+snakemake -j 10 --profile slurm.<ACCOUNT_NAME>
+``` 
+
+Method 2: cluster_config.json
+```bash 
+snakemake -j 10 --cluster-config cluster_config.json --cluster "sbatch -p <PARTITION_NAME> " 
+```
 
 ### ALSgeneScanner 
 
 
 
 ### Output
+
+
 
 
 ### Dependencies
