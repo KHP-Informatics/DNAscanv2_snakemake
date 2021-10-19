@@ -17,9 +17,14 @@
 5. [Licence](#licence)
 
 ## Introduction 
-DNAscan
+DNAscan2 is a fast and efficient bioinformatics pipeline that allows for the analysis of DNA Next Generation Sequencing data. It is capable of screening for single nucleotide variants, small indels, structural variants, transposable elements, known and non-reference repeat expansions, short tandem repeats and viral (or any other organism's) genetic material. The identified variants can then be annotated using multiple databases including refGene, Clinvar, ExAC, dbSNP, CADD and gnomAD/1000 genomes variant frequency estimation. Information about the annotated variants can be obtained via the generation of several results reports. Sequencing and alignment reports can also be generated. More information about the architecture of DNAscan2 with all analysis options can be found on the main [DNAscan2 repository](https://github.com/hevmarriott/DNAscanv2/blob/master/README.md#introduction).
+
+However, the command line implementation of DNAscan2 does not allow for parallel/multi-sample processing, which for , can become a bottleneck for 
 
 ## Documentation
+The general documentation for DNAscan2 is available by clicking on the following [link](https://github.com/hevmarriott/DNAscanv2/#documentation). 
+
+NOTE: 
 
 ### Obtaining
 
