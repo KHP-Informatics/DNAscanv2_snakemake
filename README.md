@@ -46,7 +46,7 @@ In your $HOME/.bashrc file, add the following line:
 export PATH=/path/to/Miniconda3/installation/directory/Miniconda3/bin:$PATH 
 ```
 
-Once Miniconda3 is installed on your system, create a Conda environment to download Snakemake to. The name (-n flag) of the environment should be relevant to its purpose:
+Once Miniconda3 is installed on your system, create a standalone Conda environment containing Snakemake. The name (-n flag) of the environment should be relevant to its purpose:
 
 ```bash
 conda create --name Snakemake snakemake
@@ -59,6 +59,14 @@ conda activate Snakemake
 ```
 
 NOTE: This environment should always be activated prior to running DNAscan2.
+
+To submit jobs on the selected cluster, there are two methods (cluster execution profile and command line cluster configuration). The earlier one is currently recommended by the developers of Snakemake as cluster configuration is deprecated but can still be used. To create a job execution profile, install cookiecutter into the activated snakemake environment, which ensures that the job profile can be created:
+
+```bash
+conda install -c conda-forge cookiecutter
+```
+
+Navigate to the [Snakemake profile templates page](https://github.com/Snakemake-Profiles), choose your HPC/execution system and follow the instructions for installation into the DNAscanv2_snakemake directory. The results will be a named profile directory with the structure *HPC_system.account_name*. 
 
 ### Usage
 
@@ -73,7 +81,16 @@ NOTE: This environment should always be activated prior to running DNAscan2.
 ### Dependencies
 All of the necessary binary dependencies for each step in the DNAscan2 workflow are installed and deployed via the 'conda:' directive, using environment files located in the envs/ directory. 
 
-There are some dependencies that work better if they are downloaded. 
+There are some dependencies that can only be downloaded using direct installation, listed below with versions and download links:
+* Strelka (SNV/indel variants) = [v2.9.10](https://github.com/Illumina/strelka/releases/tag/v2.9.10)
+* Manta (structural variants) = [v1.6.0](https://github.com/Illumina/manta/releases/tag/v1.6.0)
+* MELT (transposable elements) = [v2.2.2](https://melt.igs.umaryland.edu/downloads.php)
+* ExpansionHunter Denovo (genome-wide short tandem repeats) = [v0.9.0](https://github.com/Illumina/ExpansionHunterDenovo/releases/tag/v0.9.0)
+* ANNOVAR (SNV/indel + expansion/short tandem repeat annotation) = [latest](https://www.openbioinformatics.org/annovar/annovar_download_form.php)
+* AnnotSV (structural variant/transposable element annotation) = [v3.0.8](https://github.com/lgmgeo/AnnotSV/releases/tag/v3.0.8)
+* knotAnnotSV (annotated structural variant/transposable element report) = [v1.0.0](https://github.com/mobidic/knotAnnotSV/releases/tag/v1.0.0)
+
+NOTE: if wanting to perform annotation with ANNOVAR and MELT, a manual registration step is required prior to download.
 
 ## Core Contributors
 - [Heather Marriott](heather.marriott@kcl.ac.uk), UK
