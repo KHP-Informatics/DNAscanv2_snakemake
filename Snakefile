@@ -189,7 +189,7 @@ rule all:
         expand(reports_dir + "{sample}/{sample}_alignment_stats.txt", sample=sample_name) if alignment == "true" and alignment_report == "true" else [] +
         expand(reports_dir + "{sample}/{sample}_sequencing_report.txt", sample=sample_name) if format == "fastq" and sequencing_report == "true" else []+
         expand(reports_dir + "{sample}/{sample}_calls_vcfstats.txt", sample=sample_name) if variantcalling == "true" and calls_report == "true" else [] +
-        expand(reports_dir + "multiqc_report.html", sample=sample_name) if (alignment_report and sequencing_report and calls_report) == "true" else [] +
+        expand(reports_dir + "{sample}/multiqc_report.html", sample=sample_name) if (alignment_report and sequencing_report and calls_report) == "true" else [] +
         expand(reports_dir + "{sample}/{sample}_annovar_SNPindel.txt", sample=sample_name) if (variantcalling and annotation and results_report) == "true" or alsgenescanner == "true" else [] +
         expand(reports_dir + "{sample}/{sample}_annovar_expansions.txt", sample=sample_name) if (expansion and annotation and results_report) == "true" or alsgenescanner == "true" else [] +
         expand(reports_dir + "{sample}/{sample}_annovar_STR.txt", sample=sample_name) if (STR and genotypeSTR and annotation and results_report) == "true" else [] +
@@ -1206,11 +1206,11 @@ rule callsreport:
 
 rule multireport:
     input:
-        reports_dir
+        reports_dir + "{sample}/"
     conda:
         "envs/simplereports.yaml"
     output:
-        reports_dir + "{sample}_multiqc_report.html"
+        reports_dir + "{sample}/multiqc_report.html"
     params:
         alignmentreport = config["ALIGNMENT_REPORT"],
         sequencingreport = config["SEQUENCING_REPORT"],
