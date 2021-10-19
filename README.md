@@ -74,12 +74,12 @@ To demonstrate the differences in execution between the cluster execution method
 
 Method 1: Snakemake job execution profile
 ``` bash
-snakemake -j 10 "output/results/{sample_1,sample_2...}/{sample_1,sample_2...}_sorted_filtered.vcf.gz" --profile slurm.<ACCOUNT_NAME>
+snakemake -j 10 "output/results/{sample_1,sample_2...}/{sample_1,sample_2...}_sorted_filtered.vcf.gz" --profile slurm.<ACCOUNT_NAME> --use-conda
 ``` 
 
 Method 2: cluster_config.json
 ```bash 
-snakemake -j 10 "output/results/{sample_1,sample_2...}/{sample_1,sample_2...}_sorted_filtered.vcf.gz" --cluster-config cluster_config.json --cluster "sbatch -p <PARTITION_NAME> <OTHER_SLURM_OPTIONS>" 
+snakemake -j 10 "output/results/{sample_1,sample_2...}/{sample_1,sample_2...}_sorted_filtered.vcf.gz" --cluster-config cluster_config.json --cluster "sbatch -p <PARTITION_NAME> <OTHER_SLURM_OPTIONS>" --use-conda
 ```
 
 The full usage instructions are explained below. 
@@ -88,6 +88,8 @@ The full usage instructions are explained below.
 The basic and advanced options of this workflow are the same as in the DNAscan2 command line implementation, which you can read in more detail [here](https://github.com/hevmarriott/DNAscanv2#usage). 
 
 All of these options, along with paths to the reference genome/indexes and other tools unavailable via Conda can be specified from the config.yaml file. When defining directories, the paths have to end in '/'. Furthermore, all options that require boolean input (in the 'DNAscan2 command line' and 'DNAscan2 options' sections) must be populated with either 'true' or 'false', and the custom options for HISAT2, BWA, MELT and AnnotSV have to be kept as 'None' if you do not wish to provide the workflow with these values. 
+
+Once you have populated all of the relevant fields in the config.yaml file, you can run the DNAscan2 workflow.
 
 #### Usage Examples
 Different to the command line implementation of DNAscan2, Snakemake requires the user to specify the output files via the command line instead of the analysis steps that the user wants to perform. 
@@ -99,7 +101,7 @@ Alignment:
 If input is fastq: results_dir + "{sample}/{sample}_sorted_aligned.bam"
 If input is sam: results_dir + "{sample}/{sample}_sorted.bam"
 If input is cram and structural variant analysis is required: results_dir + "{sample}/{sample}_delly.bam"
-``
+```
 Variant Calling:
 ```bash
 SNP/indel (without filtering): results_dir + "{sample}/{sample}_sorted_vcf.gz"
@@ -145,9 +147,18 @@ Results Report: reports_dir + "{sample}/{sample}_MEI_annotated.html"
 Results Report (concise): reports_dir + "{sample}/{sample}_all_variants.tsv"
 ``` 
 
-### ALSgeneScanner 
+One advantage of Snakemake is that you can tailor how many steps you want to perform via the output file 'target' that you specify on the command line. For instance, by running this command using the HPC SLURM profile (on 5 samples with maximum 25 consecutive jobs):
 
-By specifying any one of these output files:
+```bash
+snakemake -j 25 --profile slurm.<account_name> --use-conda "output/reports/{sample1,sample2,sample3,sample4,sample5}/{sample1,sample2,sample3,sample4,sample5}_SV_annotated.html" 
+```
+
+DNAscan2 will perform all of the steps necessary to produce the SV annotation report i.e. alignment, structural variant calling, structural variant annotation, report generation. 
+
+### ALSgeneScanner 
+ALSgeneScanner is a module of DNAscan2 which aims to analyse and prioritise variants from ALS patients by performing alignment, SNP/indel, structural variant and repeat expansion calling of NGS data, according to a BED file of genomic coordinates of 172 genes associated with ALS. When the identified variants are annotated with Annovar, analysis is restricted to the named list of genes which correspond to the BED genomic coordinates file. It also prioritises and ranks variants according to the evidence of the gene association and the effect prediction of the variant (pathogenic vs non-pathogenic) of 13 Annovar databases.  
+
+By specifying any one of these output files in the snakemake command line:
 ```bash
 reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_all.txt"
 reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_alsod.txt"
@@ -155,11 +166,30 @@ reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_clinvar.txt"
 reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_manual_review.txt"
 reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_all_ranked.txt"
 ```
+The relevant DNAscan steps and the ALSgeneScanner ranking module are performed for each sample to yield all the above files. A directed acyclic graph (DAG) of the workflow is presented below: 
+
+![alt_text](https://github.com/hevmarriott/DNAscan2_snakemake/blob/main/ALSgeneScanner.PNG)
 
 ### Output
-The output tree of the DNAscan2 snakemake workflow is as follows:
+The output tree of the DNAscan2 snakemake workflow is as follows. For each sample, there is a results, reports and logs directory. If ALSgenescanner is performed, this is displayed as an additional subdirectory inside the DNAscan results directory which contains all of the variant files and annotations. For illustration purposes, let us assume that DNAscan/ALSgeneScanner has been performed on 3 samples:
 
-
+```bash
+$OUTPUT_DIR-|             
+            |               |-results -- -- |-alsgenescanner
+            |-sample1 -- -- |-reports
+            |               |-logs
+            |
+            |
+            |               |-results -- -- |-alsgenescanner
+            |-sample2 -- -- |-reports
+            |               |-logs
+            |               
+            |
+            |               |-results -- -- |-alsgenescanner
+            |-sample3 -- -- |-reports
+            |               |-logs
+            |
+```
 
 ### Dependencies
 All of the necessary binary dependencies for each step in the DNAscan2 workflow are installed and deployed via the 'conda:' directive, using environment files located in the envs/ directory. 
