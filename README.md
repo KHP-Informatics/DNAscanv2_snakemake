@@ -70,26 +70,33 @@ Navigate to the [Snakemake profile templates page](https://github.com/Snakemake-
 
 Alternatively, you can specify a cluster_config.json file on the command line. Instructions on how to do this is available [here](https://snakemake.readthedocs.io/en/stable/snakefiles/configuration.html#cluster-configuration-deprecated).
 
-### Usage
-
-To demonstrate the differences in execution between the cluster execution methods, consider a scenario where SNV/indel calling and filtering has to be performed on 20 samples on a SLURM cluster:
+To demonstrate the differences in execution between the cluster execution methods, consider a scenario where SNV/indel calling and filtering has to be performed on 10 samples on a SLURM cluster:
 
 Method 1: Snakemake job execution profile
 ``` bash
-snakemake -j 10 --profile slurm.<ACCOUNT_NAME>
+snakemake -j 10 "output/results/{sample_1,sample_2...}/{sample_1,sample_2...}_sorted_filtered.vcf.gz" --profile slurm.<ACCOUNT_NAME>
 ``` 
 
 Method 2: cluster_config.json
 ```bash 
-snakemake -j 10 --cluster-config cluster_config.json --cluster "sbatch -p <PARTITION_NAME> " 
+snakemake -j 10 "output/results/{sample_1,sample_2...}/{sample_1,sample_2...}_sorted_filtered.vcf.gz" --cluster-config cluster_config.json --cluster "sbatch -p <PARTITION_NAME> <OTHER_SLURM_OPTIONS>" 
 ```
+
+The full usage instructions are explained below. 
+
+### Usage
+The basic and advanced options of this workflow are the same as in the DNAscan2 command line implementation, which you can read in more detail [here](https://github.com/hevmarriott/DNAscanv2#usage). 
+
+All of these options, along with paths to the reference genome/indexes and other tools unavailable via Conda can be specified from the config.yaml file. When defining directories, the paths have to end in '/'. Furthermore, all options that require boolean input (in the 'DNAscan2 command line' and 'DNAscan2 options' sections) must be populated with either 'true' or 'false', and the custom options for HISAT2, BWA, MELT and AnnotSV have to be kept as 'None' if you do not wish to provide the workflow with these values. 
+
+
 
 ### ALSgeneScanner 
 
 
 
 ### Output
-
+The output tree of the DNAscan2 snakemake workflow is as follows:
 
 
 
@@ -105,7 +112,17 @@ There are some dependencies that can only be downloaded using direct installatio
 * AnnotSV (structural variant/transposable element annotation) = [v3.0.8](https://github.com/lgmgeo/AnnotSV/releases/tag/v3.0.8)
 * knotAnnotSV (annotated structural variant/transposable element report) = [v1.0.0](https://github.com/mobidic/knotAnnotSV/releases/tag/v1.0.0)
 
-NOTE: if wanting to perform annotation with ANNOVAR and MELT, a manual registration step is required prior to download.
+NOTE: if wanting to perform annotation with ANNOVAR and MELT, a manual registration step is required prior to download. 
+
+Furthermore, this workflow requires that you provide the reference genome and associated HISAT2 and BWA indexes in the config.yaml file. Further details on how to to download and index the reference genome and obtain microbe databases (for custom microbe analysis) is available at the main [DNAscan2 repository](https://github.com/hevmarriott/DNAscanv2#how-to-download-the-reference-genome). 
+
+For SNV/indel, expansion and STR annotation, you need to manually install these Annovar databases - refGene,dbnsfp33a,clinvar_20210501,intervar_20180118,avsnp147, exac03,1000g_aug_2015 and gnomad211_genome, according to the following example for hg19:
+
+```bash
+cd <ANNOVAR_DIR>
+annotate_variation.pl -buildver hg19 -downdb -webfrom annovar refGene /path/to/annovar/humandb/
+```
+This should be repeated for every database listed above. The above list with their operations are already defined in the config.yaml file - if you do not want to use all of these listed databases, just delete their entry from the ANNOVAR_OPERATIONS and ANNOVAR_PROTOCOLS fields. 
 
 ## Core Contributors
 - [Heather Marriott](heather.marriott@kcl.ac.uk), UK
