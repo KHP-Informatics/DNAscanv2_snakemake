@@ -89,11 +89,72 @@ The basic and advanced options of this workflow are the same as in the DNAscan2 
 
 All of these options, along with paths to the reference genome/indexes and other tools unavailable via Conda can be specified from the config.yaml file. When defining directories, the paths have to end in '/'. Furthermore, all options that require boolean input (in the 'DNAscan2 command line' and 'DNAscan2 options' sections) must be populated with either 'true' or 'false', and the custom options for HISAT2, BWA, MELT and AnnotSV have to be kept as 'None' if you do not wish to provide the workflow with these values. 
 
+#### Usage Examples
+Different to the command line implementation of DNAscan2, Snakemake requires the user to specify the output files via the command line instead of the analysis steps that the user wants to perform. 
 
+A list of output files you can specify from the command line are available below, where {sample} refers to the samples listed in the SAMPLE_NAMES field of the config.yaml file, and the 'results_dir' and 'reports_dir' are OUT_DIR + 'results/' and OUT_DIR + 'reports/' respectively:
+
+Alignment:
+```bash
+If input is fastq: results_dir + "{sample}/{sample}_sorted_aligned.bam"
+If input is sam: results_dir + "{sample}/{sample}_sorted.bam"
+If input is cram and structural variant analysis is required: results_dir + "{sample}/{sample}_delly.bam"
+``
+Variant Calling:
+```bash
+SNP/indel (without filtering): results_dir + "{sample}/{sample}_sorted_vcf.gz"
+SNP/indel (with filtering): results_dir + "{sample}/{sample}_sorted_filtered.vcf.gz"
+Known Expansions: results_dir + "{sample}/{sample}_expansions.vcf.gz"
+Novel tandem repeat (STR) profile: results_dir + "{sample}/{sample}_expansiondenovo.str_profile.json"
+Novel STR genotyping: results_dir + "{sample}/{sample}_EHDNexpansions.vcf.gz"
+Structural Variants (SV): results_dir + "{sample}/{sample}_merged_SV.vcf.gz"
+Transposable Elements (MEI): results_dir + "{sample}/{sample}_MEI.vcf.gz"
+Both SV and MEI: results_dir + "{sample}/{sample}_SV_MEI.merged.vcf.gz"
+```
+Virus, Bacteria and/or Custom Microbes:
+```bash
+Virus Read Stats: results_dir + "{sample}/{sample}_virus_stats.txt"
+Virus Report: reports_dir + "{sample}/{sample}_virus_report.txt"
+Bacteria Read Stats: results_dir + "{sample}/{sample}_bacteria_stats.txt"
+Bacteria Report: reports_dir + "{sample}/{sample}_bacteria_report.txt"
+Microbe Read Stats: results_dir + "{sample}/{sample}_microbes_stats.txt"
+Microbe Report: reports_dir + "{sample}/{sample}_microbes_report.txt"
+```
+Annotation:
+```bash
+SNP/Indel Calls: results_dir + "{sample}/{sample}_SNPindel_annotated.vcf.gz"
+Expansion Calls: results_dir + "{sample}/{sample}_expansions_annotated.vcf.gz"
+Tandem Repeat Calls: results_dir + "{sample}/{sample}_STR_annotated.vcf.gz"
+Structural Variant Calls: results_dir + "{sample}/{sample}_SV_annotated.tsv"
+Transposable Element Calls: results_dir + "{sample}/{sample}_MEI_annotated.tsv"
+Both SV and MEI Calls: results_dir + "{sample}/{sample}_SV_MEI_annotated.tsv"
+```
+Report Generation:
+```bash
+Alignment Report: reports_dir + "{sample}/{sample}_alignment_flagstat.txt"
+Alignment Report: reports_dir + "{sample}/{sample}_alignment_stats.txt"
+Sequencing Report: reports_dir + "{sample}/{sample}_sequencing_report.txt"
+Calls Report: reports_dir + "{sample}/{sample}_calls_vcfstats.txt"
+Multi Report: reports_dir + "{sample}/multiqc_report.html"
+Results Report: reports_dir + "{sample}/{sample}_annovar_SNPindel.txt"
+Results Report: reports_dir + "{sample}/{sample}_annovar_expansions.txt"
+Results Report: reports_dir + "{sample}/{sample}_annovar_STR.txt"
+Results Report: reports_dir + "{sample}/{sample}_SV_MEI_annotated.html"
+Results Report: reports_dir + "{sample}/{sample}_SV_annotated.html"
+Results Report: reports_dir + "{sample}/{sample}_MEI_annotated.html"
+Results Report (concise): reports_dir + "{sample}/{sample}_all_variants.tsv"
+``` 
 
 ### ALSgeneScanner 
 
-
+By specifying any one of these output files:
+```bash
+reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_all.txt"
+reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_alsod.txt"
+reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_clinvar.txt"
+reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_manual_review.txt"
+reports_dir + "{sample}/alsgenescanner/{sample}_alsgenescanner_all_ranked.txt"
+```
 
 ### Output
 The output tree of the DNAscan2 snakemake workflow is as follows:
