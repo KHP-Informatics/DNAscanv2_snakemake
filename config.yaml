@@ -1,4 +1,4 @@
-#DNAscan2 config.yaml with defaults
+#DNAscan2 config.yaml with default values
 #remember to populate all options that require boolean input
 
 #DNAscan2 command line
@@ -20,7 +20,7 @@ USE_OWN_TEMP_DIR: false
 NUMBER_CPU: 4
 MEM_GB: 16
 
-#DNAscan2 options (boolean true false)
+#DNAscan2 options 
 ALIGNMENT:
 SNP_INDEL:
 STRUCTURAL_VARIANT:
@@ -38,7 +38,7 @@ ALIGNMENT_REPORT:
 SNP_INDEL_CALLS_REPORT:
 ANNOTATION_RESULTS_REPORT:
 
-#if add read group is true, add the following five fields of information
+#if ADD_READ_GROUP is true, add the following five fields of information
 ID:
 LIBRARY:
 PLATFORM:
